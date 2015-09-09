@@ -392,12 +392,12 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 		pImageNtHeader->OptionalHeader.SizeOfHeaders,
 		MEM_COMMIT,
 		PAGE_READWRITE);
-	IfFalseGoExit(NULL != lpNtHeaderBase)
+	IfFalseGoExit(NULL != lpNtHeaderBase);
 
 		// 把PE头部拷贝到目标位置
-		Dw_memmove(
-		lpBase, 
-		pMemModule->RawFile.pBuffer, 
+	Dw_memmove(
+		lpBase,
+		pMemModule->RawFile.pBuffer,
 		pImageNtHeader->OptionalHeader.SizeOfHeaders);
 
 	int nNumberOfSections = pImageNtHeader->FileHeader.NumberOfSections;
@@ -418,7 +418,7 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 				dwSectionMemProtect = PAGE_EXECUTE_READWRITE;
 			}
 
-			dwSectionBase = pImageSectionHeader[i].VirtualAddress;
+			dwSectionBase = pImageSectionHeader[i].VirtualAddress + (DWORD)lpBase;
 			
 			// 提交内存
 			LPVOID lpSectionBase = NULL;
