@@ -17,7 +17,7 @@ typedef struct __NTFUNCPTRS
 	LPVOID pfnCreateFileW;			//CreateFileW
 	LPVOID pfnGetFileSize;			//GetFileSize
 	LPVOID pfnCreateFileMappingW;	//CreateFileMappingW
-	LPVOID pfnMapViewOfFile;			//MapViewOfFile
+	LPVOID pfnMapViewOfFile;		//MapViewOfFile
 	LPVOID pfnUnmapViewOfFile;		//UnmapViewOfFile
 	LPVOID pfnCloseHandle;			//CloseHandle
 	LPVOID pfnGetModuleHandleA;		//GetModuleHandleA
@@ -25,6 +25,7 @@ typedef struct __NTFUNCPTRS
 	LPVOID pfnGetProcAddress;		//GetProcAddress
 	LPVOID pfnVirtualAlloc;			//VirtualAlloc
 	LPVOID pfnVirtualFree;			//VirtualFree
+	LPVOID pfnVirtualProtect;		//VirtualProtect
 	LPVOID pfnReversed_0;
 	LPVOID pfnReversed_1;
 	LPVOID pfnReversed_2;

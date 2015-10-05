@@ -20,6 +20,7 @@ EXTERN_C
 	BOOL ReleaseRawFileResource(PMEM_MODULE pMemModule);
 	BOOL RelocateMemModule(PMEM_MODULE pMemModule);
 	BOOL ResolveImports(PMEM_MODULE pMemModule);
+	BOOL SetMemProtectStatus(PMEM_MODULE pMemModule);
 	BOOL CallModuleEntry(PMEM_MODULE pMemModule, DWORD dwReason);
 	FARPROC GetExportedProcAddress(PMEM_MODULE pMemModule, LPCSTR lpName);
 	VOID UnmapMemModule(PMEM_MODULE pMemModule);
@@ -121,6 +122,12 @@ BOOL __stdcall LoadMemModule(PMEM_MODULE pMemModule, LPCTSTR lpName, BOOL bCallE
 	// 重定位 解析倒入表
 	if (FALSE == RelocateMemModule(pMemModule) 
 		|| FALSE == ResolveImports(pMemModule))
+	{
+		UnmapMemModule(pMemModule);
+		return FALSE;
+	}
+
+	if (FALSE == SetMemProtectStatus(pMemModule))
 	{
 		UnmapMemModule(pMemModule);
 		return FALSE;
@@ -360,8 +367,6 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 	Type_VirtualAlloc pfnVirtualAlloc = (Type_VirtualAlloc)(pMemModule->pNtFuncptrsTable->pfnVirtualAlloc);
 	Type_VirtualFree pfnVirtualFree = (Type_VirtualFree)(pMemModule->pNtFuncptrsTable->pfnVirtualFree);
 
-	BOOL br = FALSE;
-
 	PIMAGE_DOS_HEADER pImageDosHeader = (PIMAGE_DOS_HEADER)(pMemModule->RawFile.pBuffer);
 
 	PIMAGE_NT_HEADERS pImageNtHeader = MakePointer(
@@ -382,19 +387,14 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 			pImageNtHeader->OptionalHeader.SizeOfImage, 
 			MEM_RESERVE | MEM_COMMIT, 
 			PAGE_READWRITE);
+
+		if (NULL == lpBase)
+		{
+			return FALSE;
+		}
 	}
 
-	// 仍然失败，说明内存无法满足要求
-	IfFalseGoExit(NULL != lpBase);
-
-	LPVOID lpNtHeaderBase = pfnVirtualAlloc(
-		lpBase,
-		pImageNtHeader->OptionalHeader.SizeOfHeaders,
-		MEM_COMMIT,
-		PAGE_READWRITE);
-	IfFalseGoExit(NULL != lpNtHeaderBase);
-
-		// 把PE头部拷贝到目标位置
+	// 把PE头部拷贝到目标位置
 	Dw_memmove(
 		lpBase,
 		pMemModule->RawFile.pBuffer,
@@ -410,24 +410,7 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 	{
 		if (0 != pImageSectionHeader[i].VirtualAddress && 0 != pImageSectionHeader[i].SizeOfRawData)
 		{
-			DWORD dwSectionMemProtect = PAGE_READWRITE;
-			// 计算该Section的内存保护属性
-			DWORD dwSectionCharacteristics = pImageSectionHeader[i].Characteristics;
-			if (dwSectionCharacteristics & IMAGE_SCN_MEM_EXECUTE)
-			{
-				dwSectionMemProtect = PAGE_EXECUTE_READWRITE;
-			}
-
 			dwSectionBase = pImageSectionHeader[i].VirtualAddress + (DWORD)lpBase;
-			
-			// 提交内存
-			LPVOID lpSectionBase = NULL;
-			lpSectionBase = pfnVirtualAlloc(
-				(LPVOID)dwSectionBase,
-				pImageSectionHeader[i].SizeOfRawData, 
-				MEM_COMMIT,
-				dwSectionMemProtect);
-			IfFalseGoExit(dwSectionBase == (DWORD)lpSectionBase);
 
 			// 拷贝一个Section到指定位置
 			Dw_memmove(
@@ -442,12 +425,7 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 	pMemModule->dwSizeOfImage = pImageNtHeader->OptionalHeader.SizeOfImage;
 	pMemModule->bLoadOk = TRUE;
 
-_Exit:
-	if (FALSE == br && NULL != lpBase)
-	{
-		pfnVirtualFree(lpBase, 0, MEM_RELEASE);
-	}
-	return br;
+	return TRUE;
 }
 
 /*
@@ -605,6 +583,65 @@ BOOL ResolveImports(PMEM_MODULE pMemModule)
 	return TRUE;
 }
 
+
+BOOL SetMemProtectStatus(PMEM_MODULE pMemModule)
+{
+	if (NULL == pMemModule
+		|| NULL == pMemModule->pNtFuncptrsTable)
+	{
+		return FALSE;
+	}
+
+	typedef BOOL (WINAPI * Type_VirtualProtect)(LPVOID, SIZE_T, DWORD, PDWORD);
+
+	Type_VirtualProtect pfnVirtualProtect = (Type_VirtualProtect)(pMemModule->pNtFuncptrsTable->pfnVirtualProtect);
+
+	BOOL br = FALSE;
+
+	PIMAGE_DOS_HEADER pImageDosHeader = (PIMAGE_DOS_HEADER)(pMemModule->lpBase);
+
+	PIMAGE_NT_HEADERS pImageNtHeader = MakePointer(
+		PIMAGE_NT_HEADERS32, pImageDosHeader, pImageDosHeader->e_lfanew);
+
+	int nNumberOfSections = pImageNtHeader->FileHeader.NumberOfSections;
+	PIMAGE_SECTION_HEADER pImageSectionHeader = MakePointer(
+		PIMAGE_SECTION_HEADER, pImageNtHeader, sizeof(IMAGE_NT_HEADERS32));
+
+	DWORD dwSectionBase = NULL;
+
+	for (int i = 0; i < nNumberOfSections; ++i)
+	{
+		if (0 != pImageSectionHeader[i].VirtualAddress && 0 != pImageSectionHeader[i].SizeOfRawData)
+		{
+			DWORD dwOldMemProtect = 0;
+			DWORD dwSectionMemProtect = 0;
+			//// 计算该Section的内存保护属性
+			// not all conditions are considerd
+			DWORD dwSectionCharacteristics = pImageSectionHeader[i].Characteristics;
+			if (dwSectionCharacteristics & IMAGE_SCN_MEM_EXECUTE)
+			{
+				dwSectionMemProtect = PAGE_EXECUTE_READWRITE;
+			}
+
+			dwSectionBase = pImageSectionHeader[i].VirtualAddress + (DWORD)pMemModule->lpBase;
+
+			//// 提交内存
+			LPVOID lpSectionBase = NULL;
+			br = pfnVirtualProtect(
+				(LPVOID)dwSectionBase,
+				pImageSectionHeader[i].SizeOfRawData,
+				dwSectionMemProtect,
+				&dwOldMemProtect);
+
+			if (!br)
+			{
+				return FALSE;
+			}
+		}
+	}
+
+	return TRUE;
+}
 
 BOOL CallModuleEntry(PMEM_MODULE pMemModule, DWORD dwReason)
 {
