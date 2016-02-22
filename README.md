@@ -9,7 +9,7 @@ You can just include the mmLoader\mmLoader folder as source file in your project
 Threre are two way to use it.
 
 1. Use the source code:
-  See also LoaderDemoExe\LoaderDemoExe.cpp
+   See also LoaderDemoExe\LoaderDemoExe.cpp
 
 2. Use the shell code:
-  See also mmLoaderShellCodeDemo\mmLoaderShellCodeDemo.cpp
+   See also mmLoaderShellCodeDemo\mmLoaderShellCodeDemo.cpp
