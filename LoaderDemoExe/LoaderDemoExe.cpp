@@ -6,6 +6,7 @@
 #include <strsafe.h>
 
 #include "..\mmLoader\mmLoader.h"
+#include "..\mmLoader\mmLoaderSC.h"
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -30,7 +31,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	sNtFuncPtrsTable.pfnGetProcAddress = GetProcAddress;
 	sNtFuncPtrsTable.pfnVirtualAlloc = VirtualAlloc;
 	sNtFuncPtrsTable.pfnVirtualFree = VirtualFree;
-	sNtFuncPtrsTable.pfnVirtualProtect = VirtualProtect;
 
 	sMemModule.pNtFuncptrsTable = &sNtFuncPtrsTable;
 
@@ -39,7 +39,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	RtlZeroMemory(tszText, sizeof(tszText));
 
 	//////////////////////////////////////////////////////////////////////////
-	// 先使用原始函数Test
+	// First, test with the original functions
 
 	//if (LoadMemModule(&sMemModule, tszDllPath, FALSE))
 	if (MemModuleHelper(&sMemModule, MHM_BOOL_LOAD, tszDllPath, NULL, FALSE))
@@ -56,7 +56,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 
-	// 把ShellCode 拷贝到任意内存地址再进行测试
+	// Copy Shell Code to any memory address space and test again.
 
 	DWORD dwShellCodeLen = 0;
 	dwShellCodeLen = (DWORD)mmLoaderSCEnd - (DWORD)mmLoaderSCStart;
@@ -69,7 +69,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	if (NULL == lpShellCodeBase)
 	{
-		MessageBox(NULL, _T("为ShellCode分配内存空间失败!"), NULL, MB_OK);
+		MessageBox(NULL, _T("Failed to allocate space for ShellCode!"), NULL, MB_OK);
 		return FALSE;
 	}
 
@@ -91,7 +91,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	VirtualFree(lpShellCodeBase, 0, MEM_RELEASE);
 
 
-	// 直接使用提取出来的ShellCode测试！
+	// Use the shell code generated to test 
 	lpShellCodeBase = VirtualAlloc(
 		NULL, 
 		sizeof(mmLoaderShellCode), 
@@ -100,7 +100,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	if (NULL == lpShellCodeBase)
 	{
-		MessageBox(NULL, _T("为ShellCode分配内存空间失败!"), NULL, MB_OK);
+		MessageBox(NULL, _T("Failed to allocate space for ShellCode!"), NULL, MB_OK);
 		return FALSE;
 	}
 

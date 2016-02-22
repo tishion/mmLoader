@@ -11,7 +11,7 @@
 #define __MMLOADER_H_INCLUDED_
 
 //////////////////////////////////////////////////////////////////////////
-// 系统相关的函数指针表
+// Function pointer table
 typedef struct __NTFUNCPTRS
 {
 	LPVOID pfnCreateFileW;			//CreateFileW
@@ -37,28 +37,28 @@ typedef struct __NTFUNCPTRS
 // MemModuleObject
 typedef struct __MEMMODULE
 {
-	union							// MemModule base
+	union								// MemModule base
 	{
 		DWORD	dwBase;
 		HMODULE	hModule;
 		LPVOID	lpBase;
 		PIMAGE_DOS_HEADER pImageDosHeader;
 	};
-	DWORD dwSizeOfImage;			// MemModule size
-	DWORD dwCrc;					// MemModule crc32
+	DWORD dwSizeOfImage;				// MemModule size
+	DWORD dwCrc;						// MemModule crc32
 
-	BOOL	bLoadOk;				// MemModule is load ok?
+	BOOL	bLoadOk;					// MemModule is load ok?
 
 	PNTFUNCPTRSTABLE pNtFuncptrsTable;	// Pointer to NT function pointers table 
 
-	struct							// Raw file resource data
+	struct								// Raw file resource data
 	{
 		HANDLE	h;
 		HANDLE	hMapping;
 		LPVOID	pBuffer;
 	}RawFile;
 
-	TCHAR tszModuleName[MAX_PATH];	// MemModule Name (or full file path name)
+	TCHAR tszModuleName[MAX_PATH];		// MemModule Name (or full file path name)
 }MEM_MODULE, *PMEM_MODULE;
 
 
@@ -68,7 +68,7 @@ typedef struct __MEMMODULE
 // 
 
 /*
- * 用于控制MemModuleHelper的行为
+ * function of the MemModuleHelper
  */ 
 typedef enum _MMHELPER_METHOD
 {
@@ -78,37 +78,6 @@ typedef enum _MMHELPER_METHOD
 }MMHELPER_METHOD;
 
 
-/************************************************************************\
- * 
- * 辅助函数：
- *		当mmLoader被ShellCode化之后对mmLoader的使用都要通过这个函数来实现
- * 参数：
- *		pMmeModule：
- *			
- *		method：
- *			需要调用的功能的类型
- *		
- *		lpModuleName：
- *			需要加载的模块名(只有当method为MHM_BOOL_LOAD时候有效)
- *		lpProcName：
- *			需要获取地址的的Proc的名字(只有当method为MHM_FARPROC_GETPROC时候有效)
- *		
- *		bCallEntry：
- *			是否需要调用模块的入口点函数(只有当method为MHM_BOOL_LOAD时候有效)
- *		
- *	返回值：
- *		当method为MHM_BOOL_LOAD：
- *			返回值为BOOL类型，代表是否Load成功
- *			
- *		当method为MHM_VOID_FREE：
- *			返回值无任何意义
- *		
- *		当method为MHM_FARPROC_GETPROC：
- *			返回值为FARPROC类型，代表获取的目标函数的地址，或者NULL为获取失败
- *		
- * 
- * 
-\************************************************************************/
 
 extern unsigned char mmLoaderShellCode[3712];
 
@@ -118,6 +87,40 @@ mmLoaderSCStart();
 EXTERN_C VOID
 mmLoaderSCEnd();
 
+/************************************************************************\
+ *
+ * Auxiliary Function:
+ *		use the mmLoader through this function after it is loaded from shell code.
+ *
+ * Parameters:
+ *		pMmeModule：
+ *
+ *		method:
+ *			Function to be used
+ *
+ *		lpModuleName：
+ *			name of the module to be loaded, only valid when method == MHM_BOOL_LOAD
+ *			
+ *		lpProcName：
+ *			name of the proc to be retrieved, only valid when MHM_FARPROC_GETPROC
+ *			
+ *		bCallEntry：
+ *			need to call the module entry point?
+ *
+ *	return value:
+ *		当method为MHM_BOOL_LOAD：
+ *		when method == MHM_BOOL_LOAD
+ *			return the resulT of loading, TRUE or FALSE
+ *
+ *		when method MHM_VOID_FREE:
+ *			no return value
+ *
+ *		when method == MHM_FARPROC_GETPROC
+ *			return the address of the target proc, return NULL when failed to get the address
+ *
+ *
+ *
+\************************************************************************/
 EXTERN_C int __stdcall
 MemModuleHelper(PMEM_MODULE pMmeModule, MMHELPER_METHOD method, LPCTSTR lpModuleName, LPCSTR lpProcName, BOOL bCallEntry);
 

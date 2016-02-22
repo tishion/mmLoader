@@ -24,9 +24,6 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\mmLoader\mmLoaderSC.cpp">
-      <Filter>mmLoaderSC</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -36,6 +33,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\mmLoader\mmLoader.h">
+      <Filter>mmLoaderSC</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mmLoader\mmLoaderSC.h">
       <Filter>mmLoaderSC</Filter>
     </ClInclude>
   </ItemGroup>

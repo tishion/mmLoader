@@ -96,19 +96,19 @@ BOOL __stdcall LoadMemModule(PMEM_MODULE pMemModule, LPCTSTR lpName, BOOL bCallE
 	Dw_memset(pMemModule, 0, sizeof(pMemModule));
 	pMemModule->RawFile.h = INVALID_HANDLE_VALUE;
 
-	// 打开文件，映射内存
+	// open file, map memory
 	if (FALSE == OpenAndMapView(lpName, pMemModule))
 	{
 		return FALSE;
 	}
 
-	// 校验文件格式是否合法
+	// verify file format
 	if (FALSE == IsValidPEFormat(pMemModule->RawFile.pBuffer))
 	{
 		return FALSE;
 	}
 
-	// 映射该PE文件的PE头和节表
+	// map PE header and section table into memory
 	if (FALSE == MapMemModuleSections(pMemModule))
 	{
 		return FALSE;
@@ -119,8 +119,8 @@ BOOL __stdcall LoadMemModule(PMEM_MODULE pMemModule, LPCTSTR lpName, BOOL bCallE
 		return FALSE;
 	}
 
-	// 重定位 解析倒入表
-	if (FALSE == RelocateMemModule(pMemModule) 
+	// relocation, resolving imports table
+	if (FALSE == RelocateMemModule(pMemModule)
 		|| FALSE == ResolveImports(pMemModule))
 	{
 		UnmapMemModule(pMemModule);
@@ -135,9 +135,10 @@ BOOL __stdcall LoadMemModule(PMEM_MODULE pMemModule, LPCTSTR lpName, BOOL bCallE
 
 	if (bCallEntry)
 	{
-		// 调用失败，这次Load视为失败，清理所有资源
 		if (FALSE == CallModuleEntry(pMemModule, DLL_PROCESS_ATTACH))
 		{
+			// failed to call entry point,
+			// clean resource, return false
 			UnmapMemModule(pMemModule);
 			return FALSE;
 		}
@@ -214,11 +215,11 @@ BOOL OpenAndMapView(LPCTSTR pFilePathName, PMEM_MODULE pMemModule)
 	IfFalseGoExit(INVALID_HANDLE_VALUE != pMemModule->RawFile.h);
 	IfFalseGoExit(NULL != pMemModule->RawFile.h);
 
-	//　检查文件大小
+	// check file size
 	DWORD dwFileSize = pfnGetFileSize(pMemModule->RawFile.h, NULL);
 	IfFalseGoExit(INVALID_FILE_SIZE != dwFileSize);
 
-	// 如果文件大小小于一个DOS头的长度，失败
+	// if file size is less than DOS header, invalid file.
 	IfFalseGoExit(dwFileSize > (sizeof(IMAGE_DOS_HEADER)));
 
 	pMemModule->RawFile.hMapping = pfnCreateFileMappingW(
@@ -234,7 +235,7 @@ _Exit:
 }
 
 //////////////////////////////////////////////////////////////////////////
-// 关闭文件映射，文件，释放资源
+// close file mapping, file, release resource
 // 
 BOOL ReleaseRawFileResource(PMEM_MODULE pMemModule)
 {
@@ -290,15 +291,15 @@ BOOL IsValidPEFormat(LPVOID pBuffer)
 
 	PIMAGE_DOS_HEADER pImageDosHeader = (PIMAGE_DOS_HEADER)pBuffer;
 
-	// 对比MZ签名
+	// check the MZ signature
 	IfFalseGoExit(IMAGE_DOS_SIGNATURE == pImageDosHeader->e_magic);
 
-	// 对比PE签名
+	// check PE signature
 	DWORD dwE_lfanew = pImageDosHeader->e_lfanew;
 	PDWORD pdwPESignature = MakePointer(PDWORD, pBuffer, dwE_lfanew);
 	IfFalseGoExit(IMAGE_NT_SIGNATURE == *pdwPESignature);
 
-	// 获取IMAGE_FILE_HEADER，然后判断目标平台CPU类型
+	// get IMAGE_FILE_HEADER, and check the target platform and CPU architecture
 	PIMAGE_FILE_HEADER pImageFileHeader = 
 		MakePointer(PIMAGE_FILE_HEADER, pdwPESignature, sizeof(IMAGE_NT_SIGNATURE));
 
@@ -312,30 +313,29 @@ BOOL IsValidPEFormat(LPVOID pBuffer)
 
 	//if (IMAGE_FILE_MACHINE_I386 == pImageFileHeader->Machine)
 	//{
-	//	// 初步判断为PE32，继续检测OptionalHeader中的Magic
+	//	// maybe PE32, go on to verify the magic in OptionalHeader
 	//	PIMAGE_NT_HEADERS32 pImageNtHeader32 = 
 	//		MakePointer(PIMAGE_NT_HEADERS32, pdwPESignature, 0);
 
 	//	IfFalseGoExit(
 	//		IMAGE_NT_OPTIONAL_HDR32_MAGIC == pImageNtHeader32->OptionalHeader.Magic);
-	//	// 确定为PE32
+	//	// it is sure this is 64 bit module
 	//}
 	//else if(IMAGE_FILE_MACHINE_AMD64 == pImageFileHeader->Machine)
 	//{
-	//	// 初步判断为PE64，继续检测OptionalHeader中的Magic
+	//	// maybe PE64, go on to verify the magic in OptionalHeader
 	//	PIMAGE_NT_HEADERS64 pImageNtHeader64 = 
 	//		MakePointer(PIMAGE_NT_HEADERS64, pdwPESignature, 0);
 
 	//	IfFalseGoExit(
 	//		IMAGE_NT_OPTIONAL_HDR64_MAGIC == pImageNtHeader64->OptionalHeader.Magic);
-	//	// 确定为PE64
-	//	
-	//	// 目前值考虑32位程序，所以64位程序不支持！
+	//	// it is sure this is PE64
+	//	// only support 32 bit module for now
 	//	IfFalseGoExit(FALSE);
 	//}
 	//else
 	//{
-	//	// 不支持的类型
+	//	// unsupported format
 	//	IfFalseGoExit(FALSE);
 	//}
 
@@ -344,13 +344,13 @@ _Exit:
 }
 
 /*
-* 按照对齐值计算大小
+* get aligment size
 */
 #define AlignmentSize(s, a)  (((s + a - 1) / a) * a )
 
 
 /*
-* 映射PE头和所有Sections
+* map PE Header and all sections.
 */
 BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 {
@@ -372,14 +372,14 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 	PIMAGE_NT_HEADERS pImageNtHeader = MakePointer(
 		PIMAGE_NT_HEADERS32, pImageDosHeader, pImageDosHeader->e_lfanew);
 
-	// 预留虚拟存
+	// reserve virtual memory
 	LPVOID lpBase = pfnVirtualAlloc(
 		(LPVOID)(pImageNtHeader->OptionalHeader.ImageBase), 
 		pImageNtHeader->OptionalHeader.SizeOfImage, 
 		MEM_RESERVE | MEM_COMMIT, 
 		PAGE_READWRITE);
 
-	// 无法加载到ImageBase指定的地址，有系统选择
+	// can't reserve space at ImageBase, then it's up to the system
 	if (NULL == lpBase)
 	{
 		lpBase = pfnVirtualAlloc(
@@ -390,11 +390,12 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 
 		if (NULL == lpBase)
 		{
+			// still failed, there may not be sufficient memory
 			return FALSE;
 		}
 	}
 
-	// 把PE头部拷贝到目标位置
+	// copy PE header to target address
 	Dw_memmove(
 		lpBase,
 		pMemModule->RawFile.pBuffer,
@@ -412,7 +413,7 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 		{
 			dwSectionBase = pImageSectionHeader[i].VirtualAddress + (DWORD)lpBase;
 
-			// 拷贝一个Section到指定位置
+			// copy this section to target address
 			Dw_memmove(
 				(LPVOID)dwSectionBase, 
 				(LPVOID)((DWORD)pMemModule->RawFile.pBuffer + pImageSectionHeader[i].PointerToRawData), 
@@ -420,7 +421,7 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 		}
 	}
 
-	// 记录该模块在内存中的基址
+	// store the base address of this module.
 	pMemModule->lpBase = lpBase;
 	pMemModule->dwSizeOfImage = pImageNtHeader->OptionalHeader.SizeOfImage;
 	pMemModule->bLoadOk = TRUE;
@@ -429,7 +430,7 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 }
 
 /*
-* 重定位
+* relocation
 */
 BOOL RelocateMemModule(PMEM_MODULE pMemModule)
 {
@@ -446,7 +447,7 @@ BOOL RelocateMemModule(PMEM_MODULE pMemModule)
 
 	DWORD dwDelta = pMemModule->dwBase - pImageNtHeader->OptionalHeader.ImageBase;
 
-	// 说明该模块被加载到了默认基址上，无需进行重定位
+	// this module has been loaded to the ImageBase, no need to do relocation
 	if (0 == dwDelta)
 	{
 		return TRUE;
@@ -491,7 +492,7 @@ BOOL RelocateMemModule(PMEM_MODULE pMemModule)
 }
 
 /*
-* 解析导入表
+* resolve import table
 */
 BOOL ResolveImports(PMEM_MODULE pMemModule)
 {
@@ -561,7 +562,7 @@ BOOL ResolveImports(PMEM_MODULE pMemModule)
 					lpFunction = pfnGetProcAddress(hMod, (LPCSTR)(pImageImportByName->Name));
 				}
 
-				// 写入IAT
+				// write into IAT
 				pIatItemEntry->u1.Function = (DWORD)lpFunction;
 
 				pOrgItemEntry = MakePointer(PIMAGE_THUNK_DATA32, pOrgItemEntry, sizeof(DWORD));
@@ -615,8 +616,8 @@ BOOL SetMemProtectStatus(PMEM_MODULE pMemModule)
 		{
 			DWORD dwOldMemProtect = 0;
 			DWORD dwSectionMemProtect = 0;
-			//// 计算该Section的内存保护属性
-			// not all conditions are considerd
+			// get attribute of this section
+			// not all conditions are considered
 			DWORD dwSectionCharacteristics = pImageSectionHeader[i].Characteristics;
 			if (dwSectionCharacteristics & IMAGE_SCN_MEM_EXECUTE)
 			{
@@ -625,7 +626,7 @@ BOOL SetMemProtectStatus(PMEM_MODULE pMemModule)
 
 			dwSectionBase = pImageSectionHeader[i].VirtualAddress + (DWORD)pMemModule->lpBase;
 
-			//// 提交内存
+			// commit memory
 			LPVOID lpSectionBase = NULL;
 			br = pfnVirtualProtect(
 				(LPVOID)dwSectionBase,

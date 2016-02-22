@@ -5,11 +5,12 @@
 #include <Windows.h>
 #include <strsafe.h>
 #include "..\mmLoader\mmLoader.h"
+#include "..\mmLoader\mmLoaderSC.h"
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 	
-	// 1.把ShellCode拷贝到随机分配的内存空间
+	// 1. Copy the shell code to random memory space address.
 	LPVOID lpShellCodeBase = VirtualAlloc(
 		NULL, 
 		sizeof(mmLoaderShellCode), 
@@ -18,16 +19,16 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	if (NULL == lpShellCodeBase)
 	{
-		MessageBox(NULL, _T("为ShellCode分配内存空间失败!"), NULL, MB_OK);
+		MessageBox(NULL, _T("Failed to allocate space for ShellCode!"), NULL, MB_OK);
 		return FALSE;
 	}
 	RtlCopyMemory(lpShellCodeBase, mmLoaderShellCode, sizeof(mmLoaderShellCode));
 
-	// 2.获取MemModuleHlper的函数指针
+	// 2. retrieve the function pointer of MemMduleHelper
 	Type_MemModuleHelper pfnMemModuleHelper = (Type_MemModuleHelper)lpShellCodeBase;
 
 
-	// 3.准备参数
+	// prepare the arguments
 	TCHAR tszDllPath[] = _T("F:\\RtlExUpd.dll");
 
 	MEM_MODULE sMemModule;
@@ -54,7 +55,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	TCHAR tszText[MAX_PATH];
 	RtlZeroMemory(tszText, sizeof(tszText));
 
-	// 4.开始用ShellCode加载模块
+	// begin to load module by shell code.
 	if (pfnMemModuleHelper(&sMemModule, MHM_BOOL_LOAD, tszDllPath, NULL, FALSE))
 	{
 		LPVOID lpAddr = (LPVOID)pfnMemModuleHelper(&sMemModule, MHM_FARPROC_GETPROC, NULL, "SetCDfmt", FALSE);
