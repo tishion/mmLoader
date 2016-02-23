@@ -7,17 +7,13 @@
 	
 	purpose:	
 *********************************************************************/
-#include <Windows.h>
-
 //+----------------------------------------------------------------------------
 //  Function:   _tcslen
 //
 //  Synopsis:
 //
 //-----------------------------------------------------------------------------
-extern "C" size_t __cdecl
-Dw_strlenA(
-		  const char *   psz)
+int Dw_strlenA(const char* psz)
 {
 	int i = 0;
 	for (size_t i=0; *psz; psz++, i++);
@@ -31,10 +27,9 @@ Dw_strlenA(
 //  Synopsis:
 //
 //-----------------------------------------------------------------------------
-extern "C" int __cdecl
-Dw_strcmpA(
-		  const char *   psza,
-		  const char *   pszb)
+int Dw_strcmpA(
+	const char* psza,
+	const char* pszb)
 {
 	unsigned char c1 = 0;
 	unsigned char c2 = 0;
@@ -56,11 +51,10 @@ Dw_strcmpA(
 //  Synopsis:
 //
 //-----------------------------------------------------------------------------
-extern "C" wchar_t * __cdecl
-Dw_strcpyW(
-		  wchar_t *          pszDest,
-		  const wchar_t *    pszSrc,
-		  size_t          nMax)
+wchar_t* Dw_strcpyW(
+	wchar_t* pszDest,
+	const wchar_t* pszSrc,
+	unsigned int nMax)
 {
 	while (nMax--)
 	{
@@ -72,60 +66,19 @@ Dw_strcpyW(
 }
 
 //+----------------------------------------------------------------------------
-//  Function:   memcmp
-//
-//  Synopsis:
-//
-//-----------------------------------------------------------------------------
-/*
-extern "C" int __cdecl
-Dw_memcmp(
-		  const void *    pv1,
-		  const void *    pv2,
-		  size_t          cb)
-{
-	size_t  i;
-	int     d;
-	for (i=0, d=0; i < cb && !d; i++)
-		d = (*(const BYTE *)pv1) - (*(const BYTE *)pv2);
-	return d;
-}
-*/
-
-//+----------------------------------------------------------------------------
-//  Function:   memcpy
-//
-//  Synopsis:
-//
-//-----------------------------------------------------------------------------
-/*
-extern "C" void * __cdecl
-Dw_memcpy(
-		  void *          pvDest,
-		  const void *    pvSrc,
-		  size_t          cb)
-{
-	for (size_t i=0; i < cb; i++)
-		((BYTE *)pvDest)[i] = ((const BYTE *)pvSrc)[i];
-	return pvDest;
-}
-*/
-
-//+----------------------------------------------------------------------------
 //  Function:   memset
 //
 //  Synopsis:
 //
 //-----------------------------------------------------------------------------
 #pragma optimize( "gtpy", off )
-extern "C" void * __cdecl
-Dw_memset(
-		  void *  pv,
-		  int     c,
-		  size_t  cb)
+void* Dw_memset(
+	void* pv,
+	int c,
+	unsigned int cb)
 {
-	for (size_t i=0; i < cb; i++)
-		((BYTE *)pv)[i] = (BYTE)c;
+	for (unsigned int i=0; i < cb; i++)
+		((unsigned char*)pv)[i] = (unsigned char)c;
 	return pv;
 }
 #pragma optimize( "gtpy", on ) 
@@ -137,19 +90,18 @@ Dw_memset(
 //  Synopsis:
 //
 //-----------------------------------------------------------------------------
-extern "C" void * __cdecl
-Dw_memmove(
-		   void *          pvDest,
-		   const void *    pvSrc,
-		   size_t          cb)
+void* Dw_memmove(
+	void* pvDest,
+	const void* pvSrc,
+	unsigned int cb)
 {
-	BYTE *  pb1;
-	BYTE *  pb2;
+	unsigned char* pb1;
+	unsigned char* pb2;
 
 	if (pvSrc < pvDest)
 	{
-		pb1 = (BYTE *)pvDest + cb - 1;
-		pb2 = (BYTE *)pvSrc  + cb - 1;
+		pb1 = (unsigned char*)pvDest + cb - 1;
+		pb2 = (unsigned char*)pvSrc  + cb - 1;
 		for (; cb; cb--)
 		{
 			*pb1-- = *pb2--;	//windows 2k 源码怎么能这样写……
@@ -157,8 +109,8 @@ Dw_memmove(
 	}
 	else if (pvSrc > pvDest)
 	{
-		pb1 = (BYTE *)pvDest;
-		pb2 = (BYTE *)pvSrc;
+		pb1 = (unsigned char*)pvDest;
+		pb2 = (unsigned char*)pvSrc;
 		for (; cb; cb--)
 		{
 			*pb1++ = *pb2++;

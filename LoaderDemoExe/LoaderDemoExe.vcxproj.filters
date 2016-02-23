@@ -35,10 +35,13 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\mmLoader\crc.h">
+    <ClInclude Include="..\mmLoader\mmLoader.h">
       <Filter>mmLoader</Filter>
     </ClInclude>
-    <ClInclude Include="..\mmLoader\mmLoader.h">
+    <ClInclude Include="..\mmLoader\mmLoaderSC.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mmLoader\crc.h">
       <Filter>mmLoader</Filter>
     </ClInclude>
     <ClInclude Include="..\mmLoader\strmem.h">

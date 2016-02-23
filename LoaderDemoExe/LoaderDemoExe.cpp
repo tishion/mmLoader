@@ -11,7 +11,7 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	MessageBox(NULL, _T("Exe Withou CRT lib."), _T("OK"), MB_OK);
 
-	TCHAR tszDllPath[] = _T("F:\\RtlExUpd.dll");
+	TCHAR tszDllPath[] = _T("C:\\windows\\system32\\user32.dll");
 
 	MEM_MODULE sMemModule;
 	RtlZeroMemory(&sMemModule, sizeof(sMemModule));
@@ -45,7 +45,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (MemModuleHelper(&sMemModule, MHM_BOOL_LOAD, tszDllPath, NULL, FALSE))
 	{
 		//LPVOID lpAddr = (LPVOID)GetMemModuleProc(&sMemModule, "SetCDfmt");
-		LPVOID lpAddr = (LPVOID)MemModuleHelper(&sMemModule, MHM_FARPROC_GETPROC, NULL, "SetCDfmt", FALSE);
+		LPVOID lpAddr = (LPVOID)MemModuleHelper(&sMemModule, MHM_FARPROC_GETPROC, NULL, "MessageBoxA", FALSE);
 		
 		StringCchPrintf(tszText, _countof(tszText), tszFormat, lpAddr);
 

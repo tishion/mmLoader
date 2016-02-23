@@ -9,13 +9,13 @@
 *********************************************************************/
 #define CRC32_POLY	0x04C10DB7L	
 
-VOID InitCrc32Table(PUINT32 pCrc32Table) 
+void InitCrc32Table(unsigned int* pCrc32Table) 
 {
-	UINT32 crc = 0;
+	unsigned int crc = 0;
 
 	for (int i=0; i<256; i++)
 	{
-		crc = (UINT32)(i << 24);
+		crc = (unsigned int)(i << 24);
 		for (int j=0; j<8; j++)
 		{
 			if (crc >> 31)
@@ -33,15 +33,15 @@ VOID InitCrc32Table(PUINT32 pCrc32Table)
 	return ;
 }
 
-UINT32 GetCrc32(UINT32 uInit, LPVOID pBuf, SIZE_T nBufSize)
+unsigned int GetCrc32(unsigned int uInit, void* pBuf, unsigned int nBufSize)
 {
-	UINT32 crc = uInit;
-	UINT32 Crc32table[256];
+	unsigned int crc = uInit;
+	unsigned int Crc32table[256];
 
 	InitCrc32Table(Crc32table);
 
-	SIZE_T nCount = nBufSize;
-	PBYTE p = (PBYTE)pBuf;
+	unsigned int nCount = nBufSize;
+	unsigned char* p = (unsigned char*)pBuf;
 	while (nCount--)
 	{
 		crc = (crc << 8) ^ Crc32table[(crc >> 24) ^ *p++];
