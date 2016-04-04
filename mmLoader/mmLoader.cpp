@@ -614,19 +614,45 @@ BOOL SetMemProtectStatus(PMEM_MODULE pMemModule)
 	{
 		if (0 != pImageSectionHeader[i].VirtualAddress && 0 != pImageSectionHeader[i].SizeOfRawData)
 		{
-			DWORD dwOldMemProtect = 0;
-			DWORD dwSectionMemProtect = 0;
 			// get attribute of this section
-			// not all conditions are considered
+			// not all conditions are considered			
+			DWORD dwSectionMemProtect = 0;
 			DWORD dwSectionCharacteristics = pImageSectionHeader[i].Characteristics;
 			if (dwSectionCharacteristics & IMAGE_SCN_MEM_EXECUTE)
 			{
-				dwSectionMemProtect = PAGE_EXECUTE_READWRITE;
+				dwSectionMemProtect = PAGE_EXECUTE;
+				if (dwSectionCharacteristics & IMAGE_SCN_MEM_READ)
+				{
+					dwSectionMemProtect = PAGE_EXECUTE_READ;
+				}
+
+				if (dwSectionCharacteristics & IMAGE_SCN_MEM_WRITE)
+				{
+					dwSectionMemProtect = PAGE_EXECUTE_READWRITE;
+				}
+			}
+			else
+			{
+				if (dwSectionCharacteristics & IMAGE_SCN_MEM_READ)
+				{
+					dwSectionMemProtect = PAGE_READONLY;
+				}
+
+				if (dwSectionCharacteristics & IMAGE_SCN_MEM_WRITE)
+				{
+					dwSectionMemProtect = PAGE_READWRITE;
+				}
+			}
+
+			if (dwSectionCharacteristics & IMAGE_SCN_MEM_NOT_CACHED)
+			{
+				dwSectionMemProtect |= PAGE_NOCACHE;
 			}
 
 			dwSectionBase = pImageSectionHeader[i].VirtualAddress + (DWORD)pMemModule->lpBase;
 
 			// commit memory
+			DWORD dwOldMemProtect = 0;
 			LPVOID lpSectionBase = NULL;
 			br = pfnVirtualProtect(
 				(LPVOID)dwSectionBase,

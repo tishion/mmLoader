@@ -30,6 +30,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	sNtFuncPtrsTable.pfnGetProcAddress = GetProcAddress;
 	sNtFuncPtrsTable.pfnVirtualAlloc = VirtualAlloc;
 	sNtFuncPtrsTable.pfnVirtualFree = VirtualFree;
+	sNtFuncPtrsTable.pfnVirtualProtect = VirtualProtect;
 
 	sMemModule.pNtFuncptrsTable = &sNtFuncPtrsTable;
 
