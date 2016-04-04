@@ -62,14 +62,13 @@ typedef struct __MEMMODULE
 }MEM_MODULE, *PMEM_MODULE;
 
 
-
 //////////////////////////////////////////////////////////////////////////
 // public
 // 
 
 /*
- * function of the MemModuleHelper
- */ 
+* function of the MemModuleHelper
+*/
 typedef enum _MMHELPER_METHOD
 {
 	MHM_BOOL_LOAD,
@@ -77,9 +76,8 @@ typedef enum _MMHELPER_METHOD
 	MHM_FARPROC_GETPROC,
 }MMHELPER_METHOD;
 
-
-
-extern unsigned char mmLoaderShellCode[3712];
+typedef int(__stdcall * Type_MemModuleHelper)(
+	PMEM_MODULE, MMHELPER_METHOD, LPCTSTR, LPCSTR, BOOL);
 
 EXTERN_C VOID
 mmLoaderSCStart();
@@ -93,22 +91,22 @@ mmLoaderSCEnd();
  *		use the mmLoader through this function after it is loaded from shell code.
  *
  * Parameters:
- *		pMmeModule：
+ *		pMmeModule:
  *
  *		method:
  *			Function to be used
  *
- *		lpModuleName：
+ *		lpModuleName:
  *			name of the module to be loaded, only valid when method == MHM_BOOL_LOAD
  *			
- *		lpProcName：
+ *		lpProcName:
  *			name of the proc to be retrieved, only valid when MHM_FARPROC_GETPROC
  *			
- *		bCallEntry：
+ *		bCallEntry:
  *			need to call the module entry point?
  *
  *	return value:
- *		当method为MHM_BOOL_LOAD：
+ *		当method为MHM_BOOL_LOAD:
  *		when method == MHM_BOOL_LOAD
  *			return the resulT of loading, TRUE or FALSE
  *
@@ -122,17 +120,25 @@ mmLoaderSCEnd();
  *
 \************************************************************************/
 EXTERN_C int __stdcall
-MemModuleHelper(PMEM_MODULE pMmeModule, MMHELPER_METHOD method, LPCTSTR lpModuleName, LPCSTR lpProcName, BOOL bCallEntry);
-
-typedef int (__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, LPCTSTR, LPCSTR, BOOL);
+MemModuleHelper(
+	_Out_ PMEM_MODULE pMmeModule, 
+	_In_ MMHELPER_METHOD method, 
+	_In_ LPCTSTR lpModuleName, 
+	_In_ LPCSTR lpProcName, 
+	_In_ BOOL bCallEntry);
 
 EXTERN_C BOOL __stdcall
-LoadMemModule(PMEM_MODULE pMemModule, LPCTSTR lpName, BOOL bCallEntry);
+LoadMemModule(
+	_Out_ PMEM_MODULE pMemModule,
+	_In_ LPCTSTR lpName, 
+	_In_ BOOL bCallEntry);
 
 EXTERN_C FARPROC __stdcall
-GetMemModuleProc(PMEM_MODULE pMemModule, LPCSTR lpName); 
+GetMemModuleProc(
+	_Out_ PMEM_MODULE pMemModule,
+	_In_ LPCSTR lpName);
 
 EXTERN_C VOID __stdcall
-FreeMemModule(PMEM_MODULE pMemModule);
+FreeMemModule(_Out_ PMEM_MODULE pMemModule);
 
 #endif

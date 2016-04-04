@@ -6,7 +6,6 @@
 #include <strsafe.h>
 
 #include "..\mmLoader\mmLoader.h"
-#include "..\mmLoader\mmLoaderSC.h"
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -39,7 +38,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	RtlZeroMemory(tszText, sizeof(tszText));
 
 	//////////////////////////////////////////////////////////////////////////
-	// First, test with the original functions
+	// 1 test with the original functions
 
 	//if (LoadMemModule(&sMemModule, tszDllPath, FALSE))
 	if (MemModuleHelper(&sMemModule, MHM_BOOL_LOAD, tszDllPath, NULL, FALSE))
@@ -56,8 +55,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 
+	//////////////////////////////////////////////////////////////////////////
 	// Copy Shell Code to any memory address space and test again.
-
 	DWORD dwShellCodeLen = 0;
 	dwShellCodeLen = (DWORD)mmLoaderSCEnd - (DWORD)mmLoaderSCStart;
 
@@ -91,35 +90,36 @@ int _tmain(int argc, _TCHAR* argv[])
 	VirtualFree(lpShellCodeBase, 0, MEM_RELEASE);
 
 
+	//////////////////////////////////////////////////////////////////////////
 	// Use the shell code generated to test 
-	lpShellCodeBase = VirtualAlloc(
-		NULL, 
-		sizeof(mmLoaderShellCode), 
-		MEM_RESERVE | MEM_COMMIT, 
-		PAGE_EXECUTE_READWRITE);
+	//lpShellCodeBase = VirtualAlloc(
+	//	NULL, 
+	//	sizeof(mmLoaderShellCode), 
+	//	MEM_RESERVE | MEM_COMMIT, 
+	//	PAGE_EXECUTE_READWRITE);
 
-	if (NULL == lpShellCodeBase)
-	{
-		MessageBox(NULL, _T("Failed to allocate space for ShellCode!"), NULL, MB_OK);
-		return FALSE;
-	}
+	//if (NULL == lpShellCodeBase)
+	//{
+	//	MessageBox(NULL, _T("Failed to allocate space for ShellCode!"), NULL, MB_OK);
+	//	return FALSE;
+	//}
 
-	RtlCopyMemory(lpShellCodeBase, mmLoaderShellCode, sizeof(mmLoaderShellCode));
+	//RtlCopyMemory(lpShellCodeBase, mmLoaderShellCode, sizeof(mmLoaderShellCode));
 
-	pfnMemModuleHelper = (Type_MemModuleHelper)lpShellCodeBase;
+	//pfnMemModuleHelper = (Type_MemModuleHelper)lpShellCodeBase;
 
-	if (pfnMemModuleHelper(&sMemModule, MHM_BOOL_LOAD, tszDllPath, NULL, FALSE))
-	{
-		LPVOID lpAddr = (LPVOID)pfnMemModuleHelper(&sMemModule, MHM_FARPROC_GETPROC, NULL, "SetCDfmt", FALSE);
+	//if (pfnMemModuleHelper(&sMemModule, MHM_BOOL_LOAD, tszDllPath, NULL, FALSE))
+	//{
+	//	LPVOID lpAddr = (LPVOID)pfnMemModuleHelper(&sMemModule, MHM_FARPROC_GETPROC, NULL, "SetCDfmt", FALSE);
 
-		StringCchPrintf(tszText, _countof(tszText), tszFormat, lpAddr);
+	//	StringCchPrintf(tszText, _countof(tszText), tszFormat, lpAddr);
 
-		MessageBox(NULL, tszText, NULL, MB_OK);
+	//	MessageBox(NULL, tszText, NULL, MB_OK);
 
-		pfnMemModuleHelper(&sMemModule, MHM_VOID_FREE, NULL, NULL, FALSE);
-	}
+	//	pfnMemModuleHelper(&sMemModule, MHM_VOID_FREE, NULL, NULL, FALSE);
+	//}
 
-	VirtualFree(lpShellCodeBase, 0, MEM_RELEASE);
+	//VirtualFree(lpShellCodeBase, 0, MEM_RELEASE);
 
 	return 0;
 }

@@ -107,11 +107,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </PrecompiledHeader>
     </ClCompile>
-    <ClInclude Include="..\mmLoader\mmLoaderSC.h">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <FileType>CppCode</FileType>
-    </ClInclude>
     <CustomBuild Include="..\mmLoader\strmem.cxx" />
     <ClCompile Include="LoaderDemoExe.cpp" />
     <ClCompile Include="stdafx.cpp">

@@ -27,9 +27,6 @@
     <ClCompile Include="..\mmLoader\mmLoader.cpp">
       <Filter>mmLoader</Filter>
     </ClCompile>
-    <ClCompile Include="..\mmLoader\mmLoaderSC.h">
-      <Filter>mmLoader</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
