@@ -9,7 +9,10 @@ You can just include the mmLoader\mmLoader folder as source file in your project
 Threre are two way to use it.
 
 1. Use the source code:
-   See also LoaderDemoExe\LoaderDemoExe.cpp
+   Just copy the source file inyo your projects.
 
-2. Use the shell code:
-   See also mmLoaderShellCodeDemo\mmLoaderShellCodeDemo.cpp
+2. Use the static library
+    Build the projects and collect the static library file, then add reference in your projects.
+
+3. Use the shell code
+   Build project mmLoader-shellcode-generator then run it, you will get the generated header file, put the header file in your project and enjoy it!
