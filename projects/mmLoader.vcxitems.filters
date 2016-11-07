@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="mmLoader">
+      <UniqueIdentifier>{b4a27408-64ca-477e-8bd9-520fc317b4fa}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\src\mmLoader\mmLoader.cpp">
+      <Filter>mmLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\src\mmLoader\crc.h">
+      <Filter>mmLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\src\mmLoader\strmem.h">
+      <Filter>mmLoader</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\src\mmLoader\mmLoader.h">
+      <Filter>mmLoader</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

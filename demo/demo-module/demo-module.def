@@ -1,0 +1,8 @@
+LIBRARY     CUFAT
+
+DESCRIPTION File System Conversion Library for FAT
+
+DATA		NONSHARED
+
+EXPORTS
+	demoFunction
