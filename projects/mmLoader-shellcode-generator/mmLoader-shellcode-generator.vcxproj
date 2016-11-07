@@ -100,7 +100,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>MinSpace</Optimization>
+      <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -110,6 +110,7 @@
       <MinimalRebuild>false</MinimalRebuild>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -121,13 +122,14 @@
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <GenerateMapFile>true</GenerateMapFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>MinSpace</Optimization>
+      <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -137,6 +139,7 @@
       <MinimalRebuild>false</MinimalRebuild>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -148,6 +151,7 @@
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <GenerateMapFile>true</GenerateMapFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -163,6 +167,7 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -174,6 +179,7 @@
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <GenerateMapFile>true</GenerateMapFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -189,6 +195,7 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -200,6 +207,7 @@
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <GenerateMapFile>true</GenerateMapFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
