@@ -1,7 +1,8 @@
 # mmLoader
 
 Load memory module.
-**Reformed! Provide static libray build and easy way to use shell code.***
+
+**Reformed! Provide static libray build and easy way to use shell code.**
 
 mmLoader is used for loaing dll module from memory directly. It can bypass the windows system PE loader load and load module into process address sapce. Also it will process all the import tables and reloaction table.
 
