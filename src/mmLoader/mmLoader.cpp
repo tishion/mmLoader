@@ -42,17 +42,7 @@ typedef HMODULE(WINAPI * Type_LoadLibraryA)(LPCSTR);
 typedef FARPROC(WINAPI * Type_GetProcAddress)(HMODULE, LPCSTR);
 typedef BOOL(WINAPI * Type_DllMain)(HMODULE, DWORD, LPVOID);
 
-void _declspec(naked) mmLoaderSCStart()
-{
-	__asm jmp MemModuleHelper
-	_asm _emit 'm'
-	_asm _emit 'm'
-	_asm _emit 'l'
-	_asm _emit 'S'
-	_asm jmp mmLoaderSCEnd
-}
-
-int __stdcall MemModuleHelper(
+LPVOID __stdcall MemModuleHelper(
 	PMEM_MODULE pMmeModule, 
 	MMHELPER_METHOD method, 
 	LPCTSTR lpModuleName, 
@@ -63,7 +53,7 @@ int __stdcall MemModuleHelper(
 	{
 	case MHM_BOOL_LOAD:
 		{
-			return (int)LoadMemModule(pMmeModule, lpModuleName, bCallEntry);
+			return (LPVOID)LoadMemModule(pMmeModule, lpModuleName, bCallEntry);
 		}
 		break;
 	case MHM_VOID_FREE:
@@ -73,7 +63,7 @@ int __stdcall MemModuleHelper(
 		break;
 	case MHM_FARPROC_GETPROC:
 		{
-			return (int)GetMemModuleProc(pMmeModule, lpProcName);
+			return (LPVOID)GetMemModuleProc(pMmeModule, lpProcName);
 		}
 		break;
 	default:
@@ -119,7 +109,7 @@ BOOL __stdcall LoadMemModule(PMEM_MODULE pMemModule, LPCTSTR lpName, BOOL bCallE
 
 	pMemModule->dwCrc = mml_getcrc32(
 		0, pMemModule->lpBase, pMemModule->dwSizeOfImage);
-	mml_strcpyW(pMemModule->tszModuleName, lpName, _countof(pMemModule->tszModuleName));
+	mml_strcpyW(pMemModule->wszModuleName, lpName, _countof(pMemModule->wszModuleName));
 
 	// Correct the protect flag for all section pages
 	if (FALSE == SetMemProtectStatus(pMemModule))
@@ -170,7 +160,7 @@ FARPROC __stdcall GetMemModuleProc(PMEM_MODULE pMemModule, LPCSTR lpName)
 /// <summary>
 /// Create a pointer value.
 /// </summary>
-#define MakePointer(t, p, offset) ((t)((ULONG)(p) + offset))
+#define MakePointer(t, p, offset) ((t)((ULONGLONG)(p) + offset))
 
 /// <summary>
 /// Opens and maps the view of the disk file.
@@ -258,49 +248,23 @@ BOOL IsValidPEFormat(LPVOID pBuffer)
 	IfFalseGoExit(IMAGE_DOS_SIGNATURE == pImageDosHeader->e_magic);
 
 	// Check PE signature
-	DWORD dwE_lfanew = pImageDosHeader->e_lfanew;
-	PDWORD pdwPESignature = MakePointer(PDWORD, pBuffer, dwE_lfanew);
-	IfFalseGoExit(IMAGE_NT_SIGNATURE == *pdwPESignature);
+	PIMAGE_NT_HEADERS pImageNtHeader =
+		MakePointer(PIMAGE_NT_HEADERS, pBuffer, pImageDosHeader->e_lfanew);
+	IfFalseGoExit(IMAGE_NT_SIGNATURE == pImageNtHeader->Signature);
 
-	// get IMAGE_FILE_HEADER, and check the target platform and CPU architecture
-	PIMAGE_FILE_HEADER pImageFileHeader = 
-		MakePointer(PIMAGE_FILE_HEADER, pdwPESignature, sizeof(IMAGE_NT_SIGNATURE));
-
-	IfFalseGoExit(IMAGE_FILE_MACHINE_I386 == pImageFileHeader->Machine);
-
-	PIMAGE_NT_HEADERS32 pImageNtHeader32 = 
-		MakePointer(PIMAGE_NT_HEADERS32, pdwPESignature, 0);
-
-	IfFalseGoExit(
-		IMAGE_NT_OPTIONAL_HDR32_MAGIC == pImageNtHeader32->OptionalHeader.Magic);
-
-	if (IMAGE_FILE_MACHINE_I386 == pImageFileHeader->Machine)
+#ifdef _WIN64
+	if (IMAGE_FILE_MACHINE_AMD64 == pImageNtHeader->FileHeader.Machine)
 	{
-		// Maybe PE32, go on to verify the magic in OptionalHeader
-		PIMAGE_NT_HEADERS32 pImageNtHeader32 =
-			MakePointer(PIMAGE_NT_HEADERS32, pdwPESignature, 0);
-
-		IfFalseGoExit(
-			IMAGE_NT_OPTIONAL_HDR32_MAGIC == pImageNtHeader32->OptionalHeader.Magic);
-		// it is sure this is 32 bit module
+		IfFalseGoExit(IMAGE_NT_OPTIONAL_HDR64_MAGIC == pImageNtHeader->OptionalHeader.Magic);
 	}
-	//else if(IMAGE_FILE_MACHINE_AMD64 == pImageFileHeader->Machine)
-	//{
-	//	// maybe PE64, go on to verify the magic in OptionalHeader
-	//	PIMAGE_NT_HEADERS64 pImageNtHeader64 = 
-	//		MakePointer(PIMAGE_NT_HEADERS64, pdwPESignature, 0);
-
-	//	IfFalseGoExit(
-	//		IMAGE_NT_OPTIONAL_HDR64_MAGIC == pImageNtHeader64->OptionalHeader.Magic);
-	//	// it is sure this is PE64
-	//	// only support 32 bit module for now
-	//	IfFalseGoExit(FALSE);
-	//}
+#else
+	if (IMAGE_FILE_MACHINE_I386 == pImageNtHeader->FileHeader.Machine)
+	{
+		IfFalseGoExit(IMAGE_NT_OPTIONAL_HDR32_MAGIC == pImageNtHeader->OptionalHeader.Magic);
+	}
+#endif
 	else
-	{
-		// Unsupported format
 		IfFalseGoExit(FALSE);
-	}
 
 _Exit:
 	return br;
@@ -324,12 +288,30 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 
 	// Get the pointer to IMAGE_NT_HEADERS
 	PIMAGE_NT_HEADERS pImageNtHeader = MakePointer(
-		PIMAGE_NT_HEADERS32, pImageDosHeader, pImageDosHeader->e_lfanew);
+		PIMAGE_NT_HEADERS, pImageDosHeader, pImageDosHeader->e_lfanew);
+	
+	int nNumberOfSections = pImageNtHeader->FileHeader.NumberOfSections;
+	
+	PIMAGE_SECTION_HEADER pImageSectionHeader = MakePointer(
+		PIMAGE_SECTION_HEADER, pImageNtHeader, sizeof(IMAGE_NT_HEADERS));
+
+	DWORD dwImageSizeLimit = 0;
+	// Find last section limit
+	for (int i = 0; i < nNumberOfSections; ++i)
+	{
+		if (0 != pImageSectionHeader[i].VirtualAddress)
+		{
+			if (dwImageSizeLimit < (pImageSectionHeader[i].VirtualAddress + pImageSectionHeader[i].SizeOfRawData))
+				dwImageSizeLimit = pImageSectionHeader[i].VirtualAddress + pImageSectionHeader[i].SizeOfRawData;
+		}
+	}
+
+	dwImageSizeLimit = (dwImageSizeLimit + pMemModule->dwPageSize - 1) & ~(pMemModule->dwPageSize - 1);
 
 	// Reserve virtual memory 
 	LPVOID lpBase = pfnVirtualAlloc(
 		(LPVOID)(pImageNtHeader->OptionalHeader.ImageBase), 
-		pImageNtHeader->OptionalHeader.SizeOfImage,
+		dwImageSizeLimit,
 		MEM_RESERVE | MEM_COMMIT, 
 		PAGE_READWRITE);
 
@@ -339,7 +321,7 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 		// Reserver memory in arbitrary address
 		lpBase = pfnVirtualAlloc(
 			NULL, 
-			pImageNtHeader->OptionalHeader.SizeOfImage,
+			dwImageSizeLimit,
 			MEM_RESERVE | MEM_COMMIT, 
 			PAGE_READWRITE);
 
@@ -358,38 +340,37 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 
 	pImageDosHeader = (PIMAGE_DOS_HEADER)pDest;
 	pImageNtHeader = MakePointer(
-		PIMAGE_NT_HEADERS32, pImageDosHeader, pImageDosHeader->e_lfanew);
+		PIMAGE_NT_HEADERS, pImageDosHeader, pImageDosHeader->e_lfanew);
 
-	int nNumberOfSections = pImageNtHeader->FileHeader.NumberOfSections;
-	PIMAGE_SECTION_HEADER pImageSectionHeader = MakePointer(
-		PIMAGE_SECTION_HEADER, pImageNtHeader, sizeof(IMAGE_NT_HEADERS32));
+	pImageSectionHeader = MakePointer(
+		PIMAGE_SECTION_HEADER, pImageNtHeader, sizeof(IMAGE_NT_HEADERS));
 
-	DWORD dwSectionBase = NULL;
+	ULONGLONG ulSectionBase = 0;
 
 	for (int i = 0; i < nNumberOfSections; ++i)
 	{
 		if (0 != pImageSectionHeader[i].VirtualAddress)
 		{
-			dwSectionBase = pImageSectionHeader[i].VirtualAddress + (DWORD)lpBase;
+			ulSectionBase = pImageSectionHeader[i].VirtualAddress + (ULONGLONG)lpBase;
 
 			if (0 == pImageSectionHeader[i].SizeOfRawData)
 			{
 				if (pImageNtHeader->OptionalHeader.SectionAlignment > 0)
 				{
-					pDest = pfnVirtualAlloc((LPVOID)dwSectionBase, pImageNtHeader->OptionalHeader.SectionAlignment,
+					pDest = pfnVirtualAlloc((LPVOID)ulSectionBase, pImageNtHeader->OptionalHeader.SectionAlignment,
 						MEM_COMMIT, PAGE_READWRITE);
 					if (NULL == pDest) return FALSE;
 
 					// Always use position from file to support alignments smaller than page size.
-					mml_memset((LPVOID)dwSectionBase, 0, pImageNtHeader->OptionalHeader.SectionAlignment);
+					mml_memset((LPVOID)ulSectionBase, 0, pImageNtHeader->OptionalHeader.SectionAlignment);
 				}
 			}
 			else
 			{
 				// Commit this section to target address
-				pDest = pfnVirtualAlloc((LPVOID)dwSectionBase, pImageSectionHeader[i].SizeOfRawData, MEM_COMMIT, PAGE_READWRITE);
+				pDest = pfnVirtualAlloc((LPVOID)ulSectionBase, pImageSectionHeader[i].SizeOfRawData, MEM_COMMIT, PAGE_READWRITE);
 				if (NULL == pDest) return FALSE;
-				mml_memmove(pDest, (LPVOID)((DWORD)pMemModule->RawFile.pBuffer + pImageSectionHeader[i].PointerToRawData), pImageSectionHeader[i].SizeOfRawData);
+				mml_memmove(pDest, (LPVOID)((ULONGLONG)pMemModule->RawFile.pBuffer + pImageSectionHeader[i].PointerToRawData), pImageSectionHeader[i].SizeOfRawData);
 			}
 
 			pImageSectionHeader[i].Misc.PhysicalAddress = (DWORD)pDest;
@@ -407,15 +388,15 @@ BOOL RelocateModuleBase(PMEM_MODULE pMemModule)
 	if (NULL == pMemModule  || NULL == pMemModule->pImageDosHeader)
 		return FALSE;
 
-	PIMAGE_NT_HEADERS32 pImageNtHeader = MakePointer(
-		PIMAGE_NT_HEADERS32, 
+	PIMAGE_NT_HEADERS pImageNtHeader = MakePointer(
+		PIMAGE_NT_HEADERS,
 		pMemModule->pImageDosHeader, 
 		pMemModule->pImageDosHeader->e_lfanew);
 
-	DWORD dwDelta = pMemModule->dwBase - pImageNtHeader->OptionalHeader.ImageBase;
+	ULONGLONG ulDelta = pMemModule->ulBase - pImageNtHeader->OptionalHeader.ImageBase;
 
 	// this module has been loaded to the ImageBase, no need to do relocation
-	if (0 == dwDelta) return TRUE;
+	if (0 == ulDelta) return TRUE;
 
 	if (0 == pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress
 		|| 0 == pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size)
@@ -426,8 +407,7 @@ BOOL RelocateModuleBase(PMEM_MODULE pMemModule)
 		pMemModule->lpBase, 
 		pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
 
-	if (NULL == pImageBaseRelocation)
-		return FALSE;
+	if (NULL == pImageBaseRelocation) return FALSE;
 
 	while (0 != (pImageBaseRelocation->VirtualAddress + pImageBaseRelocation->SizeOfBlock))
 	{
@@ -438,11 +418,19 @@ BOOL RelocateModuleBase(PMEM_MODULE pMemModule)
 
 		for (int i = 0; i < NumberOfRelocationData; i++)
 		{
-			if (/*0x00003000*/IMAGE_REL_BASED_HIGHLOW == (pRelocationData[i] >> 12))
+			if (IMAGE_REL_BASED_HIGHLOW == (pRelocationData[i] >> 12))
 			{
-				PDWORD pAddress = (PDWORD)(pMemModule->dwBase + pImageBaseRelocation->VirtualAddress + (pRelocationData[i] & 0x0FFF));
-				*pAddress += dwDelta;
+				PDWORD pAddress = (PDWORD)(pMemModule->ulBase + pImageBaseRelocation->VirtualAddress + (pRelocationData[i] & 0x0FFF));
+				*pAddress += (DWORD)ulDelta;
 			}
+
+#ifdef _WIN64
+			if (IMAGE_REL_BASED_DIR64 == (pRelocationData[i] >> 12))
+			{
+				ULONGLONG* pAddress = (ULONGLONG*)(pMemModule->ulBase + pImageBaseRelocation->VirtualAddress + (pRelocationData[i] & 0x0FFF));
+				*pAddress += ulDelta;
+			}
+#endif
 		}
 
 		pImageBaseRelocation = (PIMAGE_BASE_RELOCATION)((DWORD)pImageBaseRelocation + pImageBaseRelocation->SizeOfBlock);
@@ -463,8 +451,8 @@ BOOL ResolveImportTable(PMEM_MODULE pMemModule)
 	Type_LoadLibraryA pfnLoadLibraryA = (Type_LoadLibraryA)(pMemModule->pNtFuncptrsTable->pfnLoadLibraryA);
 	Type_GetProcAddress pfnGetProcAddress = (Type_GetProcAddress)(pMemModule->pNtFuncptrsTable->pfnGetProcAddress);
 
-	PIMAGE_NT_HEADERS32 pImageNtHeader = MakePointer(
-		PIMAGE_NT_HEADERS32, 
+	PIMAGE_NT_HEADERS pImageNtHeader = MakePointer(
+		PIMAGE_NT_HEADERS,
 		pMemModule->pImageDosHeader, 
 		pMemModule->pImageDosHeader->e_lfanew);
 
@@ -554,12 +542,17 @@ BOOL SetMemProtectStatus(PMEM_MODULE pMemModule)
 
 	PIMAGE_DOS_HEADER pImageDosHeader = (PIMAGE_DOS_HEADER)(pMemModule->lpBase);
 
+	ULONGLONG ulBaseHigh = 0;
+#ifdef _WIN64
+	ulBaseHigh = (pMemModule->ulBase & 0xffffffff00000000);
+#endif
+
 	PIMAGE_NT_HEADERS pImageNtHeader = MakePointer(
-		PIMAGE_NT_HEADERS32, pImageDosHeader, pImageDosHeader->e_lfanew);
+		PIMAGE_NT_HEADERS, pImageDosHeader, pImageDosHeader->e_lfanew);
 
 	int nNumberOfSections = pImageNtHeader->FileHeader.NumberOfSections;
 	PIMAGE_SECTION_HEADER pImageSectionHeader = MakePointer(
-		PIMAGE_SECTION_HEADER, pImageNtHeader, sizeof(IMAGE_NT_HEADERS32));
+		PIMAGE_SECTION_HEADER, pImageNtHeader, sizeof(IMAGE_NT_HEADERS));
 
 	for (int idxSection = 0; idxSection < nNumberOfSections; idxSection++)
 	{
@@ -570,7 +563,7 @@ BOOL SetMemProtectStatus(PMEM_MODULE pMemModule)
 		BOOL isWritable = FALSE;
 
 		BOOL isNotCache = FALSE;
-		DWORD dwSectionBase = pImageSectionHeader[idxSection].Misc.PhysicalAddress;
+		ULONGLONG dwSectionBase = (pImageSectionHeader[idxSection].Misc.PhysicalAddress | ulBaseHigh);
 		DWORD dwSecionSize = pImageSectionHeader[idxSection].SizeOfRawData;
 		if (0 == dwSecionSize) continue;
 
@@ -614,15 +607,15 @@ BOOL ExecuteTLSCallback(PMEM_MODULE pMemModule)
 	if (NULL == pMemModule || NULL == pMemModule->pImageDosHeader)
 		return FALSE;
 
-	PIMAGE_NT_HEADERS32 pImageNtHeader = MakePointer(
-		PIMAGE_NT_HEADERS32,
+	PIMAGE_NT_HEADERS pImageNtHeader = MakePointer(
+		PIMAGE_NT_HEADERS,
 		pMemModule->pImageDosHeader,
 		pMemModule->pImageDosHeader->e_lfanew);
 
 	IMAGE_DATA_DIRECTORY imageDirectoryEntryTls = pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_TLS];
 	if (imageDirectoryEntryTls.VirtualAddress == 0)	return TRUE;
 
-	PIMAGE_TLS_DIRECTORY tls = (PIMAGE_TLS_DIRECTORY)(pMemModule->dwBase + imageDirectoryEntryTls.VirtualAddress);
+	PIMAGE_TLS_DIRECTORY tls = (PIMAGE_TLS_DIRECTORY)(pMemModule->ulBase + imageDirectoryEntryTls.VirtualAddress);
 	PIMAGE_TLS_CALLBACK* callback = (PIMAGE_TLS_CALLBACK *)tls->AddressOfCallBacks;
 	if (callback)
 	{
@@ -643,8 +636,8 @@ BOOL CallModuleEntry(PMEM_MODULE pMemModule, DWORD dwReason)
 	if (NULL == pMemModule || NULL == pMemModule->pImageDosHeader)
 		return FALSE;
 
-	PIMAGE_NT_HEADERS32 pImageNtHeader = MakePointer(
-		PIMAGE_NT_HEADERS32, 
+	PIMAGE_NT_HEADERS pImageNtHeader = MakePointer(
+		PIMAGE_NT_HEADERS,
 		pMemModule->pImageDosHeader, 
 		pMemModule->pImageDosHeader->e_lfanew);
 
@@ -669,8 +662,8 @@ FARPROC GetExportedProcAddress(PMEM_MODULE pMemModule, LPCSTR lpName)
 	if (NULL == pMemModule || NULL == pMemModule->pImageDosHeader)
 		return NULL;
 
-	PIMAGE_NT_HEADERS32 pImageNtHeader = MakePointer(
-		PIMAGE_NT_HEADERS32, 
+	PIMAGE_NT_HEADERS pImageNtHeader = MakePointer(
+		PIMAGE_NT_HEADERS,
 		pMemModule->pImageDosHeader, 
 		pMemModule->pImageDosHeader->e_lfanew);
 
@@ -730,7 +723,7 @@ VOID UnmapMemModule(PMEM_MODULE pMemModule)
 	pMemModule->dwSizeOfImage = 0;
 	pMemModule->bLoadOk = FALSE;
 
-	mml_memset(pMemModule->tszModuleName, 0, sizeof(pMemModule->tszModuleName));
+	mml_memset(pMemModule->wszModuleName, 0, sizeof(pMemModule->wszModuleName));
 }
 
 //
@@ -742,14 +735,9 @@ VOID UnmapMemModule(PMEM_MODULE pMemModule)
 /// <summary>
 /// 
 /// </summary>
-inline void mmLoaderSCEnd()
+inline void MMLOADERSHELLCODEEND()
 {
-	__asm jmp MemModuleHelper
-	_asm _emit 'm'
-	_asm _emit 'm'
-	_asm _emit 'l'
-	_asm _emit 'S'
-	_asm jmp mmLoaderSCStart;
+	MemModuleHelper(0, (MMHELPER_METHOD)0, 0, 0, 0);
 }
 
 #pragma endregion mmLoaderImpl

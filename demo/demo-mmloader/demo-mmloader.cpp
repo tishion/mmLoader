@@ -34,7 +34,7 @@ int main()
 	WCHAR wszDllPath[] = L"demo-module.dll";
 	if (MemModuleHelper(&sMemModule, MHM_BOOL_LOAD, wszDllPath, NULL, TRUE))
 	{
-		_tprintf(_T("Module was loaded successfully. Module Base: 0x%08X!\r\n"), sMemModule.dwBase);
+		_tprintf(_T("Module was loaded successfully. Module Base: 0x%p!\r\n"), sMemModule.lpBase);
 
 		// Get address of function demoFunction
 		LPVOID lpAddr = (LPVOID)MemModuleHelper(&sMemModule, MHM_FARPROC_GETPROC, NULL, "demoFunction", FALSE);

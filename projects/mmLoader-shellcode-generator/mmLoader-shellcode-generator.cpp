@@ -50,7 +50,7 @@ LPSTR head =
 "{\r\n"
 "	union								// MemModule base\r\n"
 "	{\r\n"
-"		DWORD	dwBase;\r\n"
+"		ULONGLONG ulBase;\r\n"
 "		HMODULE	hModule;\r\n"
 "		LPVOID	lpBase;\r\n"
 "		PIMAGE_DOS_HEADER pImageDosHeader;\r\n"
@@ -70,20 +70,22 @@ LPSTR head =
 "		LPVOID	pBuffer;\r\n"
 "	} RawFile;\r\n"
 "\r\n"
-"	TCHAR tszModuleName[MAX_PATH];		// MemModule Name (or full file path name)\r\n"
+"	WCHAR wszModuleName[MAX_PATH];		// MemModule Name (or full file path name)\r\n"
 "   __MEMMODULE()\r\n"
 "	{\r\n"
-"		dwBase = 0;\r\n"
+"		ulBase = 0;\r\n"
 "		dwSizeOfImage = 0;\r\n"
 "		dwCrc = 0;\r\n"
 "		bLoadOk = 0;\r\n"
 "		pNtFuncptrsTable = 0;\r\n"
 "		RawFile.h = 0;\r\n"
+"		RawFile.hMapping = 0;\r\n"
+"		RawFile.pBuffer = 0;\r\n"
 "\r\n"
 "		SYSTEM_INFO sysInfo;\r\n"
 "		::GetNativeSystemInfo(&sysInfo);\r\n"
 "		dwPageSize = sysInfo.dwPageSize;\r\n"
-"		for (int i = 0; i < MAX_PATH; i++) tszModuleName[i] = 0;\r\n"
+"		for (int i = 0; i < MAX_PATH; i++) wszModuleName[i] = 0;\r\n"
 "	}\r\n"
 "} MEM_MODULE, *PMEM_MODULE;\r\n"
 "\r\n"
@@ -100,7 +102,7 @@ LPSTR head =
 "/// <summary>\r\n"
 "/// Type of the MemModuleHlper function.\r\n"
 "/// </summary>\r\n"
-"typedef int(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, LPCWSTR, LPCSTR, BOOL);\r\n"
+"typedef LPVOID(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, LPCWSTR, LPCSTR, BOOL);\r\n"
 "\r\n"
 "/************************************************************************\\\r\n"
 " *\r\n"
@@ -198,7 +200,7 @@ LPSTR tail =
 "	WCHAR wszDllPath[] = L\"demo-module.dll\";\r\n"
 "	if (pfnMemModuleHelper(&sMemModule, MHM_BOOL_LOAD, wszDllPath, NULL, FALSE))\r\n"
 "	{\r\n"
-"		_tprintf(_T(\"Module was load user32.dll successfully.Module Base : 0x%08X!\\r\\n\"), sMemModule.dwBase);\r\n"
+"		_tprintf(_T(\"Module was load user32.dll successfully.Module Base : 0x%p!\\r\\n\"), sMemModule.lpBase);\r\n"
 "\r\n"
 "		// Get address of function demoFunction\r\n"
 "		LPVOID lpAddr = (LPVOID)pfnMemModuleHelper(&sMemModule, MHM_FARPROC_GETPROC, NULL, \"demoFunction\", FALSE);\\r\\n"
@@ -282,8 +284,8 @@ int CodeBag()
 	InitializeConsole();
 
 	// Get code start and end address
-	unsigned char* pStart = (unsigned char*)&mmLoaderSCStart;
-	unsigned char* pEnd = (unsigned char*)&mmLoaderSCEnd;
+	unsigned char* pStart = (unsigned char*)&MemModuleHelper;
+	unsigned char* pEnd = (unsigned char*)&MMLOADERSHELLCODEEND;
 
 	// Get code length
 	int codeLength = (pEnd - pStart);

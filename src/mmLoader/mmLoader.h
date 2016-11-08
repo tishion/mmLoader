@@ -34,7 +34,7 @@ typedef struct __MEMMODULE
 {
 	union								// MemModule base
 	{
-		DWORD	dwBase;
+		ULONGLONG ulBase;
 		HMODULE	hModule;
 		LPVOID	lpBase;
 		PIMAGE_DOS_HEADER pImageDosHeader;
@@ -53,21 +53,23 @@ typedef struct __MEMMODULE
 		LPVOID	pBuffer;
 	} RawFile;
 
-	TCHAR tszModuleName[MAX_PATH];		// MemModule Name (or full file path name)
+	WCHAR wszModuleName[MAX_PATH];		// MemModule Name (or full file path name)
 
 	__MEMMODULE()
 	{
-		dwBase = 0;
+		ulBase = 0;
 		dwSizeOfImage = 0;
 		dwCrc = 0;
 		bLoadOk = 0;
 		pNtFuncptrsTable = 0;
 		RawFile.h = 0;
+		RawFile.hMapping = 0;
+		RawFile.pBuffer = 0;
 		
 		SYSTEM_INFO sysInfo;
 		::GetNativeSystemInfo(&sysInfo);
 		dwPageSize = sysInfo.dwPageSize;
-		for (int i = 0; i < MAX_PATH; i++) tszModuleName[i] = 0;
+		for (int i = 0; i < MAX_PATH; i++) wszModuleName[i] = 0;
 	}
 } MEM_MODULE, *PMEM_MODULE;
 
@@ -84,7 +86,7 @@ typedef enum _MMHELPER_METHOD
 /// <summary>
 /// Type of the MemModuleHlper function.
 /// </summary>
-typedef int(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, LPCWSTR, LPCSTR, BOOL);
+typedef LPVOID(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, LPCWSTR, LPCSTR, BOOL);
 
 /************************************************************************\
  *
@@ -120,14 +122,9 @@ typedef int(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, LPCW
  *
 \************************************************************************/
 /// <summary>
-/// Shell code start mark.
-/// </summary>
-EXTERN_C VOID mmLoaderSCStart();
-
-/// <summary>
 /// Helper function for using shell code.
 /// </summary>
-EXTERN_C int __stdcall
+EXTERN_C LPVOID __stdcall
 MemModuleHelper(
 	_Out_ PMEM_MODULE pMmeModule, 
 	_In_ MMHELPER_METHOD method, 
@@ -158,6 +155,6 @@ FreeMemModule(_Out_ PMEM_MODULE pMemModule);
 /// <summary>
 /// Frees the memory module.
 /// </summary>
-EXTERN_C VOID mmLoaderSCEnd();
+EXTERN_C VOID MMLOADERSHELLCODEEND();
 
 #endif // __MMLOADER_H_INCLUDED_

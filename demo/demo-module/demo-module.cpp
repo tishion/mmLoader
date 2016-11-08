@@ -9,4 +9,3 @@ DEMOMODULE_API int demoFunction(void)
 {
 	return ::MessageBoxA(NULL, "This Message is displayed from memory module.", "", MB_OK);
 }
-

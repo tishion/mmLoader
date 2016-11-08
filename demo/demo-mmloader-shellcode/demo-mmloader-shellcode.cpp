@@ -52,7 +52,7 @@ int main()
 	WCHAR wszDllPath[] = L"demo-module.dll";
 	if (pfnMemModuleHelper(&sMemModule, MHM_BOOL_LOAD, wszDllPath, NULL, FALSE))
 	{
-		_tprintf(_T("Module was load successfully. Module Base: 0x%08X!\r\n"), sMemModule.dwBase);
+		_tprintf(_T("Module was load successfully. Module Base: 0x%p!\r\n"), sMemModule.lpBase);
 
 		// Get address of function demoFunction
 		LPVOID lpAddr = (LPVOID)pfnMemModuleHelper(&sMemModule, MHM_FARPROC_GETPROC, NULL, "demoFunction", FALSE);
