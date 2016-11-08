@@ -84,7 +84,7 @@ typedef enum _MMHELPER_METHOD
 /// <summary>
 /// Type of the MemModuleHlper function.
 /// </summary>
-typedef int(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, LPCTSTR, LPCSTR, BOOL);
+typedef int(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, LPCWSTR, LPCSTR, BOOL);
 
 /************************************************************************\
  *
@@ -131,7 +131,7 @@ EXTERN_C int __stdcall
 MemModuleHelper(
 	_Out_ PMEM_MODULE pMmeModule, 
 	_In_ MMHELPER_METHOD method, 
-	_In_ LPCTSTR lpModuleName, 
+	_In_ LPCWSTR lpModuleName,
 	_In_ LPCSTR lpProcName, 
 	_In_ BOOL bCallEntry);
 
@@ -141,7 +141,7 @@ MemModuleHelper(
 EXTERN_C BOOL __stdcall
 LoadMemModule(
 	_Out_ PMEM_MODULE pMemModule,
-	_In_ LPCTSTR lpName, 
+	_In_ LPCWSTR lpName, 
 	_In_ BOOL bCallEntry);
 
 /// <summary>

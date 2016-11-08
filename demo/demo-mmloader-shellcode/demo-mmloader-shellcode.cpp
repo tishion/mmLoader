@@ -49,8 +49,8 @@ int main()
 	Type_MemModuleHelper pfnMemModuleHelper = (Type_MemModuleHelper)lpShellCodeBase;
 
 	// Load the module
-	TCHAR tszDllPath[] = _T("demo-module.dll");
-	if (pfnMemModuleHelper(&sMemModule, MHM_BOOL_LOAD, tszDllPath, NULL, FALSE))
+	WCHAR wszDllPath[] = L"demo-module.dll";
+	if (pfnMemModuleHelper(&sMemModule, MHM_BOOL_LOAD, wszDllPath, NULL, FALSE))
 	{
 		_tprintf(_T("Module was load successfully. Module Base: 0x%08X!\r\n"), sMemModule.dwBase);
 

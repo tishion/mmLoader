@@ -31,8 +31,8 @@ int main()
 	sMemModule.pNtFuncptrsTable = &sNtFuncPtrsTable;
 
 	// Load the module
-	TCHAR tszDllPath[] = _T("demo-module.dll");
-	if (MemModuleHelper(&sMemModule, MHM_BOOL_LOAD, tszDllPath, NULL, TRUE))
+	WCHAR wszDllPath[] = L"demo-module.dll";
+	if (MemModuleHelper(&sMemModule, MHM_BOOL_LOAD, wszDllPath, NULL, TRUE))
 	{
 		_tprintf(_T("Module was loaded successfully. Module Base: 0x%08X!\r\n"), sMemModule.dwBase);
 

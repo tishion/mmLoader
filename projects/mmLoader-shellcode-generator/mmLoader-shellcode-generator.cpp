@@ -100,7 +100,7 @@ LPSTR head =
 "/// <summary>\r\n"
 "/// Type of the MemModuleHlper function.\r\n"
 "/// </summary>\r\n"
-"typedef int(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, LPCTSTR, LPCSTR, BOOL);\r\n"
+"typedef int(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, LPCWSTR, LPCSTR, BOOL);\r\n"
 "\r\n"
 "/************************************************************************\\\r\n"
 " *\r\n"
@@ -195,8 +195,8 @@ LPSTR tail =
 "	Type_MemModuleHelper pfnMemModuleHelper = (Type_MemModuleHelper)lpShellCodeBase;\r\n"
 "\r\n"
 "	// Load the module\r\n"
-"	TCHAR tszDllPath[] = _T(\"demo-module.dll\");\r\n"
-"	if (pfnMemModuleHelper(&sMemModule, MHM_BOOL_LOAD, tszDllPath, NULL, FALSE))\r\n"
+"	WCHAR wszDllPath[] = L\"demo-module.dll\";\r\n"
+"	if (pfnMemModuleHelper(&sMemModule, MHM_BOOL_LOAD, wszDllPath, NULL, FALSE))\r\n"
 "	{\r\n"
 "		_tprintf(_T(\"Module was load user32.dll successfully.Module Base : 0x%08X!\\r\\n\"), sMemModule.dwBase);\r\n"
 "\r\n"
@@ -255,6 +255,12 @@ void ConsoleWrite(LPCSTR message)
 	if (!h || !::WriteConsoleA(h, message, lstrlenA(message), &bytesWritten, NULL))
 		::MessageBoxA(NULL, message, "Warning", MB_OK);
 }
+
+#ifdef _DEBUG
+#define SHELLCODE_HEADER_FILE_NAME "mmLoaderShellCode-debug.h"
+#else
+#define SHELLCODE_HEADER_FILE_NAME "mmLoaderShellCode-release.h"
+#endif
 
 /// <summary>
 /// 
