@@ -8,7 +8,7 @@ mmLoader is used for loaing dll module from memory directly. It can bypass the w
 
 You can just include the mmLoader\mmLoader folder as source file in your projects, or just copy files in that folder to your projects.
 
-Threre are three ways to use it.
+There are three ways to use it.
 
 1. Use the source code:
    Just copy the source file inyo your projects.
@@ -19,4 +19,3 @@ Threre are three ways to use it.
 3. Use the shell code
    Build project mmLoader-shellcode-generator then run it, you will get the generated header file, put the header file in your project and enjoy it!
 
-!
