@@ -34,11 +34,16 @@ typedef struct __MEMMODULE
 {
 	union								// MemModule base
 	{
-		ULONGLONG ulBase;
-		HMODULE	hModule;
-		LPVOID	lpBase;
+#if _WIN64
+		ULONGLONG	iBase;
+#else
+		DWORD		iBase;
+#endif
+		HMODULE		hModule;
+		LPVOID		lpBase;
 		PIMAGE_DOS_HEADER pImageDosHeader;
 	};
+
 	DWORD dwSizeOfImage;				// MemModule size
 	DWORD dwCrc;						// MemModule crc32
 	DWORD dwPageSize;					// SystemPageSize
@@ -57,7 +62,7 @@ typedef struct __MEMMODULE
 
 	__MEMMODULE()
 	{
-		ulBase = 0;
+		iBase = 0;
 		dwSizeOfImage = 0;
 		dwCrc = 0;
 		bLoadOk = 0;

@@ -8,7 +8,7 @@
 
 int main()
 {
-	//::MessageBoxA(NULL, "This message box is displayed by calling the code in memory module.", "TEST", MB_OK);
+	int iRet = -1;
 
 	// Initialize function table
 	NTFUNCPTRSTABLE sNtFuncPtrsTable;
@@ -43,11 +43,18 @@ int main()
 			_tprintf(_T("Get address of demoFunction successfully. Address: 0x%p!\r\n"), lpAddr);
 
 			// Function pointer type of demoFunction
-			typedef int (WINAPI * Type_TargetFunction)();
+			typedef BOOL (WINAPI * Type_TargetFunction)(unsigned char*, unsigned int);
 
 			// Call the demoFunction
 			Type_TargetFunction pfnFunction = (Type_TargetFunction)lpAddr;
-			pfnFunction();
+
+			unsigned char buf[MAX_PATH] = { 0 };
+			if (pfnFunction(buf, MAX_PATH))
+			{
+				char* p = "{f56fee02-16d1-44a3-b191-4d7535f92ca5}";
+				memcmp(buf, p, strlen(p));
+				iRet = 0;
+			}
 		}
 		else
 			_tprintf(_T("Failed to get address of demoFunction from memory module.\r\n"));
@@ -58,8 +65,6 @@ int main()
 	else
 		_tprintf(_T("Failed to load the module!\r\n"));
 
-	_gettch();
-
-	return 0;
+	return iRet;
 }
 

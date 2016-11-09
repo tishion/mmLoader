@@ -5,24 +5,39 @@
 #include <windows.h>
 #include <tchar.h>
 #include <strsafe.h>
-#include "mmLoaderShellCode.h"
+
+#ifdef _WIN64
+#	ifdef _DEBUG
+#		include "mmLoader/mmLoaderShellCode-x64-Debug.h"
+#	else
+#		include "mmLoader/mmLoaderShellCode-x64-Release.h"
+#	endif
+#else
+#	ifdef _DEBUG
+#		include "mmLoader/mmLoaderShellCode-x86-Debug.h"
+#	else
+#		include "mmLoader/mmLoaderShellCode-x86-Release.h"
+#	endif
+#endif
 
 int main()
 {
-	// Function table
+	int iRet = -1;
+
+	// Initialize function table
 	NTFUNCPTRSTABLE sNtFuncPtrsTable;
-	sNtFuncPtrsTable.pfnCreateFileW = CreateFileW;
-	sNtFuncPtrsTable.pfnGetFileSize = GetFileSize;
-	sNtFuncPtrsTable.pfnCreateFileMappingW = CreateFileMappingW;
-	sNtFuncPtrsTable.pfnMapViewOfFile = MapViewOfFile;
-	sNtFuncPtrsTable.pfnUnmapViewOfFile = UnmapViewOfFile;
-	sNtFuncPtrsTable.pfnCloseHandle = CloseHandle;
-	sNtFuncPtrsTable.pfnGetModuleHandleA = GetModuleHandleA;
-	sNtFuncPtrsTable.pfnLoadLibraryA = LoadLibraryA;
-	sNtFuncPtrsTable.pfnGetProcAddress = GetProcAddress;
-	sNtFuncPtrsTable.pfnVirtualAlloc = VirtualAlloc;
-	sNtFuncPtrsTable.pfnVirtualFree = VirtualFree;
-	sNtFuncPtrsTable.pfnVirtualProtect = VirtualProtect;
+	sNtFuncPtrsTable.pfnCreateFileW = ::CreateFileW;
+	sNtFuncPtrsTable.pfnGetFileSize = ::GetFileSize;
+	sNtFuncPtrsTable.pfnCreateFileMappingW = ::CreateFileMappingW;
+	sNtFuncPtrsTable.pfnMapViewOfFile = ::MapViewOfFile;
+	sNtFuncPtrsTable.pfnUnmapViewOfFile = ::UnmapViewOfFile;
+	sNtFuncPtrsTable.pfnCloseHandle = ::CloseHandle;
+	sNtFuncPtrsTable.pfnGetModuleHandleA = ::GetModuleHandleA;
+	sNtFuncPtrsTable.pfnLoadLibraryA = ::LoadLibraryA;
+	sNtFuncPtrsTable.pfnGetProcAddress = ::GetProcAddress;
+	sNtFuncPtrsTable.pfnVirtualAlloc = ::VirtualAlloc;
+	sNtFuncPtrsTable.pfnVirtualFree = ::VirtualFree;
+	sNtFuncPtrsTable.pfnVirtualProtect = ::VirtualProtect;
 
 	// Memory module
 	MEM_MODULE sMemModule;
@@ -39,7 +54,7 @@ int main()
 	if (NULL == lpShellCodeBase)
 	{
 		::_tprintf(_T("Failed to allocate space for ShellCode!"));
-		return FALSE;
+		return iRet;
 	}
 
 	// Copy shell code to the executable memory buffer
@@ -61,11 +76,18 @@ int main()
 			_tprintf(_T("Get address of demoFunction successfully. Address: 0x%p!\r\n"), lpAddr);
 
 			// Function pointer type of demoFunction
-			typedef int (WINAPI * Type_TargetFunction)();
+			typedef BOOL(WINAPI * Type_TargetFunction)(unsigned char*, unsigned int);
 
 			// Call the demoFunction
 			Type_TargetFunction pfnFunction = (Type_TargetFunction)lpAddr;
-			pfnFunction();
+
+			unsigned char buf[MAX_PATH] = { 0 };
+			if (pfnFunction(buf, MAX_PATH))
+			{
+				char* p = "{f56fee02-16d1-44a3-b191-4d7535f92ca5}";
+				memcmp(buf, p, strlen(p));
+				iRet = 0;
+			}
 		}
 		else
 			_tprintf(_T("Failed to get address of MessageBoxA from memory module."));
@@ -79,5 +101,5 @@ int main()
 	// Free the memory buffer of the shell code
 	::VirtualFree(lpShellCodeBase, 0, MEM_RELEASE);
 
-	return 0;
+	return iRet;
 }

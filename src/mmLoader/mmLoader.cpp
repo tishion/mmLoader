@@ -42,6 +42,15 @@ typedef HMODULE(WINAPI * Type_LoadLibraryA)(LPCSTR);
 typedef FARPROC(WINAPI * Type_GetProcAddress)(HMODULE, LPCSTR);
 typedef BOOL(WINAPI * Type_DllMain)(HMODULE, DWORD, LPVOID);
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="pMmeModule"></param>
+/// <param name="method"></param>
+/// <param name="lpModuleName"></param>
+/// <param name="lpProcName"></param>
+/// <param name="bCallEntry"></param>
+/// <returns></returns>
 LPVOID __stdcall MemModuleHelper(
 	PMEM_MODULE pMmeModule, 
 	MMHELPER_METHOD method, 
@@ -53,7 +62,7 @@ LPVOID __stdcall MemModuleHelper(
 	{
 	case MHM_BOOL_LOAD:
 		{
-			return (LPVOID)LoadMemModule(pMmeModule, lpModuleName, bCallEntry);
+			return (LPVOID)(INT_PTR)LoadMemModule(pMmeModule, lpModuleName, bCallEntry);
 		}
 		break;
 	case MHM_VOID_FREE:
@@ -73,6 +82,13 @@ LPVOID __stdcall MemModuleHelper(
 	return 0;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="pMemModule"></param>
+/// <param name="lpName"></param>
+/// <param name="bCallEntry"></param>
+/// <returns></returns>
 BOOL __stdcall LoadMemModule(PMEM_MODULE pMemModule, LPCTSTR lpName, BOOL bCallEntry)
 {
 	if (NULL == pMemModule || NULL == pMemModule->pNtFuncptrsTable || NULL == lpName)
@@ -135,6 +151,11 @@ BOOL __stdcall LoadMemModule(PMEM_MODULE pMemModule, LPCTSTR lpName, BOOL bCallE
 	return TRUE;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="pMemModule"></param>
+/// <returns></returns>
 VOID __stdcall FreeMemModule(PMEM_MODULE pMemModule)
 {
 	if (NULL != pMemModule)
@@ -160,11 +181,14 @@ FARPROC __stdcall GetMemModuleProc(PMEM_MODULE pMemModule, LPCSTR lpName)
 /// <summary>
 /// Create a pointer value.
 /// </summary>
-#define MakePointer(t, p, offset) ((t)((ULONGLONG)(p) + offset))
+#define MakePointer(t, p, offset) ((t)((PUINT8)(p) + offset))
 
 /// <summary>
 /// Opens and maps the view of the disk file.
 /// </summary>
+/// <param name="pFilePathName"></param>
+/// <param name="pMemModule"></param>
+/// <returns></returns>
 BOOL OpenAndMapView(LPCTSTR pFilePathName, PMEM_MODULE pMemModule)
 {
 	if (NULL == pMemModule || NULL == pMemModule->pNtFuncptrsTable)
@@ -188,12 +212,10 @@ BOOL OpenAndMapView(LPCTSTR pFilePathName, PMEM_MODULE pMemModule)
 	// If file size is less than DOS header, invalid file.
 	IfFalseGoExit(dwFileSize > (sizeof(IMAGE_DOS_HEADER)));
 
-	pMemModule->RawFile.hMapping = pfnCreateFileMappingW(
-		pMemModule->RawFile.h, 0, PAGE_READONLY, 0, 0, NULL);
+	pMemModule->RawFile.hMapping = pfnCreateFileMappingW(pMemModule->RawFile.h, 0, PAGE_READONLY, 0, 0, NULL);
 	IfFalseGoExit(NULL != pMemModule->RawFile.hMapping);
 
-	pMemModule->RawFile.pBuffer = pfnMapViewOfFile(
-		pMemModule->RawFile.hMapping, FILE_MAP_READ, 0, 0, 0);
+	pMemModule->RawFile.pBuffer = pfnMapViewOfFile(pMemModule->RawFile.hMapping, FILE_MAP_READ, 0, 0, 0);
 	IfFalseGoExit(NULL != pMemModule->RawFile.pBuffer);
 
 _Exit:
@@ -203,6 +225,8 @@ _Exit:
 /// <summary>
 /// 
 /// </summary>
+/// <param name="pMemModule"></param>
+/// <returns></returns>
 BOOL ReleaseRawFileResource(PMEM_MODULE pMemModule)
 {
 	if (NULL == pMemModule || NULL == pMemModule->pNtFuncptrsTable)
@@ -235,6 +259,8 @@ BOOL ReleaseRawFileResource(PMEM_MODULE pMemModule)
 /// <summary>
 /// 
 /// </summary>
+/// <param name="pBuffer"></param>
+/// <returns></returns>
 BOOL IsValidPEFormat(LPVOID pBuffer)
 {
 	if (NULL == pBuffer)
@@ -273,6 +299,8 @@ _Exit:
 /// <summary>
 /// 
 /// </summary>
+/// <param name="pMemModule"></param>
+/// <returns></returns>
 BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 {
 	// Validate
@@ -339,41 +367,40 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 	pMemModule->bLoadOk = TRUE;
 
 	pImageDosHeader = (PIMAGE_DOS_HEADER)pDest;
-	pImageNtHeader = MakePointer(
-		PIMAGE_NT_HEADERS, pImageDosHeader, pImageDosHeader->e_lfanew);
+	pImageNtHeader = MakePointer(PIMAGE_NT_HEADERS, pImageDosHeader, pImageDosHeader->e_lfanew);
+	pImageSectionHeader = MakePointer(PIMAGE_SECTION_HEADER, pImageNtHeader, sizeof(IMAGE_NT_HEADERS));
 
-	pImageSectionHeader = MakePointer(
-		PIMAGE_SECTION_HEADER, pImageNtHeader, sizeof(IMAGE_NT_HEADERS));
-
-	ULONGLONG ulSectionBase = 0;
+	LPVOID pSectionBase = NULL;
+	LPVOID pSectionDataSource = NULL;
 
 	for (int i = 0; i < nNumberOfSections; ++i)
 	{
 		if (0 != pImageSectionHeader[i].VirtualAddress)
 		{
-			ulSectionBase = pImageSectionHeader[i].VirtualAddress + (ULONGLONG)lpBase;
+			pSectionBase = MakePointer(LPVOID, lpBase, pImageSectionHeader[i].VirtualAddress);
 
 			if (0 == pImageSectionHeader[i].SizeOfRawData)
 			{
 				if (pImageNtHeader->OptionalHeader.SectionAlignment > 0)
 				{
-					pDest = pfnVirtualAlloc((LPVOID)ulSectionBase, pImageNtHeader->OptionalHeader.SectionAlignment,
+					pDest = pfnVirtualAlloc(pSectionBase, pImageNtHeader->OptionalHeader.SectionAlignment,
 						MEM_COMMIT, PAGE_READWRITE);
 					if (NULL == pDest) return FALSE;
 
 					// Always use position from file to support alignments smaller than page size.
-					mml_memset((LPVOID)ulSectionBase, 0, pImageNtHeader->OptionalHeader.SectionAlignment);
+					mml_memset(pSectionBase, 0, pImageNtHeader->OptionalHeader.SectionAlignment);
 				}
 			}
 			else
 			{
 				// Commit this section to target address
-				pDest = pfnVirtualAlloc((LPVOID)ulSectionBase, pImageSectionHeader[i].SizeOfRawData, MEM_COMMIT, PAGE_READWRITE);
+				pDest = pfnVirtualAlloc(pSectionBase, pImageSectionHeader[i].SizeOfRawData, MEM_COMMIT, PAGE_READWRITE);
 				if (NULL == pDest) return FALSE;
-				mml_memmove(pDest, (LPVOID)((ULONGLONG)pMemModule->RawFile.pBuffer + pImageSectionHeader[i].PointerToRawData), pImageSectionHeader[i].SizeOfRawData);
+				pSectionDataSource = MakePointer(LPVOID, pMemModule->RawFile.pBuffer, pImageSectionHeader[i].PointerToRawData);
+				mml_memmove(pDest, pSectionDataSource, pImageSectionHeader[i].SizeOfRawData);
 			}
 
-			pImageSectionHeader[i].Misc.PhysicalAddress = (DWORD)pDest;
+			pImageSectionHeader[i].Misc.PhysicalAddress = (DWORD)(ULONGLONG)pDest;
 		}
 	}
 
@@ -383,6 +410,8 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 /// <summary>
 /// 
 /// </summary>
+/// <param name="pMemModule"></param>
+/// <returns></returns>
 BOOL RelocateModuleBase(PMEM_MODULE pMemModule)
 {
 	if (NULL == pMemModule  || NULL == pMemModule->pImageDosHeader)
@@ -393,18 +422,17 @@ BOOL RelocateModuleBase(PMEM_MODULE pMemModule)
 		pMemModule->pImageDosHeader, 
 		pMemModule->pImageDosHeader->e_lfanew);
 
-	ULONGLONG ulDelta = pMemModule->ulBase - pImageNtHeader->OptionalHeader.ImageBase;
+	// Get the delta of the real image base with the predefined
+	LONGLONG lBaseDelta = ((PUINT8)pMemModule->iBase - (PUINT8)pImageNtHeader->OptionalHeader.ImageBase);
 
-	// this module has been loaded to the ImageBase, no need to do relocation
-	if (0 == ulDelta) return TRUE;
+	// This module has been loaded to the ImageBase, no need to do relocation
+	if (0 == lBaseDelta) return TRUE;
 
 	if (0 == pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress
 		|| 0 == pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size)
 		return TRUE;
 
-	PIMAGE_BASE_RELOCATION pImageBaseRelocation = MakePointer(
-		PIMAGE_BASE_RELOCATION, 
-		pMemModule->lpBase, 
+	PIMAGE_BASE_RELOCATION pImageBaseRelocation = MakePointer(PIMAGE_BASE_RELOCATION, pMemModule->lpBase, 
 		pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
 
 	if (NULL == pImageBaseRelocation) return FALSE;
@@ -413,27 +441,26 @@ BOOL RelocateModuleBase(PMEM_MODULE pMemModule)
 	{
 		PWORD pRelocationData = MakePointer(PWORD, pImageBaseRelocation, sizeof(IMAGE_BASE_RELOCATION));
 
-		int NumberOfRelocationData = (pImageBaseRelocation->SizeOfBlock 
-			- sizeof(IMAGE_BASE_RELOCATION)) / sizeof(WORD);
+		int NumberOfRelocationData = (pImageBaseRelocation->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(WORD);
 
 		for (int i = 0; i < NumberOfRelocationData; i++)
 		{
 			if (IMAGE_REL_BASED_HIGHLOW == (pRelocationData[i] >> 12))
 			{
-				PDWORD pAddress = (PDWORD)(pMemModule->ulBase + pImageBaseRelocation->VirtualAddress + (pRelocationData[i] & 0x0FFF));
-				*pAddress += (DWORD)ulDelta;
+				PDWORD pAddress = (PDWORD)(pMemModule->iBase + pImageBaseRelocation->VirtualAddress + (pRelocationData[i] & 0x0FFF));
+				*pAddress += (DWORD)lBaseDelta;
 			}
 
 #ifdef _WIN64
 			if (IMAGE_REL_BASED_DIR64 == (pRelocationData[i] >> 12))
 			{
-				ULONGLONG* pAddress = (ULONGLONG*)(pMemModule->ulBase + pImageBaseRelocation->VirtualAddress + (pRelocationData[i] & 0x0FFF));
-				*pAddress += ulDelta;
+				PULONGLONG pAddress = (PULONGLONG)(pMemModule->iBase + pImageBaseRelocation->VirtualAddress + (pRelocationData[i] & 0x0FFF));
+				*pAddress += lBaseDelta;
 			}
 #endif
 		}
 
-		pImageBaseRelocation = (PIMAGE_BASE_RELOCATION)((DWORD)pImageBaseRelocation + pImageBaseRelocation->SizeOfBlock);
+		pImageBaseRelocation = MakePointer(PIMAGE_BASE_RELOCATION, pImageBaseRelocation, pImageBaseRelocation->SizeOfBlock);
 	}
 
 	return TRUE;
@@ -442,6 +469,8 @@ BOOL RelocateModuleBase(PMEM_MODULE pMemModule)
 /// <summary>
 /// 
 /// </summary>
+/// <param name="pMemModule"></param>
+/// <returns></returns>
 BOOL ResolveImportTable(PMEM_MODULE pMemModule)
 {
 	if (NULL == pMemModule  || NULL == pMemModule->pNtFuncptrsTable || NULL == pMemModule->pImageDosHeader)
@@ -451,66 +480,62 @@ BOOL ResolveImportTable(PMEM_MODULE pMemModule)
 	Type_LoadLibraryA pfnLoadLibraryA = (Type_LoadLibraryA)(pMemModule->pNtFuncptrsTable->pfnLoadLibraryA);
 	Type_GetProcAddress pfnGetProcAddress = (Type_GetProcAddress)(pMemModule->pNtFuncptrsTable->pfnGetProcAddress);
 
-	PIMAGE_NT_HEADERS pImageNtHeader = MakePointer(
-		PIMAGE_NT_HEADERS,
-		pMemModule->pImageDosHeader, 
-		pMemModule->pImageDosHeader->e_lfanew);
+	PIMAGE_NT_HEADERS pImageNtHeader = MakePointer(PIMAGE_NT_HEADERS, pMemModule->pImageDosHeader, pMemModule->pImageDosHeader->e_lfanew);
 
 	if (pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress == 0
 		|| pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size == 0)
 		return TRUE;
 
-	PIMAGE_IMPORT_DESCRIPTOR pImageImportDescriptor = MakePointer(
-		PIMAGE_IMPORT_DESCRIPTOR, 
-		pMemModule->lpBase, 
+	PIMAGE_IMPORT_DESCRIPTOR pImageImportDescriptor = MakePointer(PIMAGE_IMPORT_DESCRIPTOR, pMemModule->lpBase, 
 		pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
 
-	while (pImageImportDescriptor->OriginalFirstThunk)
+	for (; pImageImportDescriptor->Name; pImageImportDescriptor++)
 	{
+		// Get the dependent module name
 		PCHAR pDllName = MakePointer(PCHAR, pMemModule->lpBase, pImageImportDescriptor->Name);
+
+		// Get the dependent module handle
 		HMODULE hMod = pfnGetModuleHandleA(pDllName);
 
-		if (NULL == hMod)
-			hMod = pfnLoadLibraryA(pDllName);
+		// Load the dependent module
+		if (NULL == hMod) hMod = pfnLoadLibraryA(pDllName);
 
-		if (NULL != hMod)
-		{
-			DWORD OriginalFirstThunk = pImageImportDescriptor->OriginalFirstThunk;
-			DWORD FirstThunk = pImageImportDescriptor->FirstThunk;
+		// Failed
+		if (NULL == hMod) return FALSE;
 
-			PIMAGE_THUNK_DATA32 pOrgItemEntry = MakePointer(PIMAGE_THUNK_DATA32, pMemModule->lpBase, OriginalFirstThunk);
-
-			PIMAGE_THUNK_DATA32 pIatItemEntry = MakePointer(PIMAGE_THUNK_DATA32, pMemModule->lpBase, FirstThunk);
-
-			while (0 != pOrgItemEntry->u1.AddressOfData)
-			{
-				FARPROC lpFunction = NULL;
-				if (pOrgItemEntry->u1.AddressOfData & IMAGE_ORDINAL_FLAG32) 
-				{			
-					lpFunction = pfnGetProcAddress(hMod, (LPCSTR)(IMAGE_ORDINAL32(pOrgItemEntry->u1.Ordinal)));
-				}
-				else
-				{
-					PIMAGE_IMPORT_BY_NAME pImageImportByName = MakePointer(
-						PIMAGE_IMPORT_BY_NAME, pMemModule->lpBase, pOrgItemEntry->u1.AddressOfData);
-
-					lpFunction = pfnGetProcAddress(hMod, (LPCSTR)(pImageImportByName->Name));
-				}
-
-				// write into IAT
-				pIatItemEntry->u1.Function = (DWORD)lpFunction;
-
-				pOrgItemEntry = MakePointer(PIMAGE_THUNK_DATA32, pOrgItemEntry, sizeof(DWORD));
-				pIatItemEntry = MakePointer(PIMAGE_THUNK_DATA32, pIatItemEntry, sizeof(DWORD));
-			}
-		}
+		// Original thunk
+		PIMAGE_THUNK_DATA pOriginalThunk = NULL;
+		if (pImageImportDescriptor->OriginalFirstThunk)
+			pOriginalThunk = MakePointer(PIMAGE_THUNK_DATA, pMemModule->lpBase, pImageImportDescriptor->OriginalFirstThunk);
 		else
-			return FALSE;
+			pOriginalThunk = MakePointer(PIMAGE_THUNK_DATA, pMemModule->lpBase, pImageImportDescriptor->FirstThunk);
 
-		pImageImportDescriptor = MakePointer(
-			PIMAGE_IMPORT_DESCRIPTOR, 
-			pImageImportDescriptor, 
-			sizeof(IMAGE_IMPORT_DESCRIPTOR));
+		// IAT thunk
+		PIMAGE_THUNK_DATA pIATThunk = MakePointer(PIMAGE_THUNK_DATA, pMemModule->lpBase, 
+			pImageImportDescriptor->FirstThunk);
+
+		for (; pOriginalThunk->u1.AddressOfData; pOriginalThunk++, pIATThunk++)
+		{
+			FARPROC lpFunction = NULL;
+			if (IMAGE_SNAP_BY_ORDINAL(pOriginalThunk->u1.Ordinal))
+			{
+				lpFunction = pfnGetProcAddress(hMod, (LPCSTR)IMAGE_ORDINAL(pOriginalThunk->u1.Ordinal));
+			}
+			else
+			{
+				PIMAGE_IMPORT_BY_NAME pImageImportByName = MakePointer(
+					PIMAGE_IMPORT_BY_NAME, pMemModule->lpBase, pOriginalThunk->u1.AddressOfData);
+
+				lpFunction = pfnGetProcAddress(hMod, (LPCSTR)&(pImageImportByName->Name));
+			}
+
+			// Write into IAT
+#ifdef _WIN64
+			pIATThunk->u1.Function = (ULONGLONG)lpFunction;
+#else
+			pIATThunk->u1.Function = (DWORD)lpFunction;
+#endif
+		}
 	}
 
 	return TRUE;
@@ -519,6 +544,8 @@ BOOL ResolveImportTable(PMEM_MODULE pMemModule)
 /// <summary>
 /// 
 /// </summary>
+/// <param name="pMemModule"></param>
+/// <returns></returns>
 BOOL SetMemProtectStatus(PMEM_MODULE pMemModule)
 {
 	if (NULL == pMemModule || NULL == pMemModule->pNtFuncptrsTable)
@@ -544,7 +571,7 @@ BOOL SetMemProtectStatus(PMEM_MODULE pMemModule)
 
 	ULONGLONG ulBaseHigh = 0;
 #ifdef _WIN64
-	ulBaseHigh = (pMemModule->ulBase & 0xffffffff00000000);
+	ulBaseHigh = (pMemModule->iBase & 0xffffffff00000000);
 #endif
 
 	PIMAGE_NT_HEADERS pImageNtHeader = MakePointer(
@@ -602,6 +629,11 @@ BOOL SetMemProtectStatus(PMEM_MODULE pMemModule)
 	return TRUE;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="pMemModule"></param>
+/// <returns></returns>
 BOOL ExecuteTLSCallback(PMEM_MODULE pMemModule)
 {
 	if (NULL == pMemModule || NULL == pMemModule->pImageDosHeader)
@@ -615,7 +647,7 @@ BOOL ExecuteTLSCallback(PMEM_MODULE pMemModule)
 	IMAGE_DATA_DIRECTORY imageDirectoryEntryTls = pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_TLS];
 	if (imageDirectoryEntryTls.VirtualAddress == 0)	return TRUE;
 
-	PIMAGE_TLS_DIRECTORY tls = (PIMAGE_TLS_DIRECTORY)(pMemModule->ulBase + imageDirectoryEntryTls.VirtualAddress);
+	PIMAGE_TLS_DIRECTORY tls = (PIMAGE_TLS_DIRECTORY)(pMemModule->iBase + imageDirectoryEntryTls.VirtualAddress);
 	PIMAGE_TLS_CALLBACK* callback = (PIMAGE_TLS_CALLBACK *)tls->AddressOfCallBacks;
 	if (callback)
 	{
@@ -631,6 +663,9 @@ BOOL ExecuteTLSCallback(PMEM_MODULE pMemModule)
 /// <summary>
 /// 
 /// </summary>
+/// <param name="pMemModule"></param>
+/// <param name="dwReason"></param>
+/// <returns></returns>
 BOOL CallModuleEntry(PMEM_MODULE pMemModule, DWORD dwReason)
 {
 	if (NULL == pMemModule || NULL == pMemModule->pImageDosHeader)
@@ -657,6 +692,9 @@ BOOL CallModuleEntry(PMEM_MODULE pMemModule, DWORD dwReason)
 /// <summary>
 /// 
 /// </summary>
+/// <param name="pMemModule"></param>
+/// <param name="lpName"></param>
+/// <returns></returns>
 FARPROC GetExportedProcAddress(PMEM_MODULE pMemModule, LPCSTR lpName)
 {
 	if (NULL == pMemModule || NULL == pMemModule->pImageDosHeader)
@@ -706,6 +744,8 @@ FARPROC GetExportedProcAddress(PMEM_MODULE pMemModule, LPCSTR lpName)
 /// <summary>
 /// 
 /// </summary>
+/// <param name="pMemModule"></param>
+/// <returns></returns>
 VOID UnmapMemModule(PMEM_MODULE pMemModule)
 {
 	if (NULL == pMemModule

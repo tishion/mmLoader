@@ -5,7 +5,12 @@
 #include "demo-module.h"
 
 // This is an example of an exported function.
-DEMOMODULE_API int demoFunction(void)
+DEMOMODULE_API BOOL demoFunction(unsigned char* buffer, unsigned int size)
 {
-	return ::MessageBoxA(NULL, "This Message is displayed from memory module.", "", MB_OK);
+	if (buffer)
+		return FALSE;
+
+	char* p = "{f56fee02-16d1-44a3-b191-4d7535f92ca5}";
+	memcpy_s(buffer, size, p, strlen(p));
+	return TRUE;
 }
