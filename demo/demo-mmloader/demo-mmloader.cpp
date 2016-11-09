@@ -32,7 +32,11 @@ int main()
 	sMemModule.pNtFuncptrsTable = &sNtFuncPtrsTable;
 
 	// Load the module
+#ifdef _DEBUG
+	WCHAR wszDllPath[] = L"demo-moduled.dll";
+#else
 	WCHAR wszDllPath[] = L"demo-module.dll";
+#endif
 	if (MemModuleHelper(&sMemModule, MHM_BOOL_LOAD, wszDllPath, NULL, TRUE))
 	{
 		_tprintf(_T("Module was loaded successfully. Module Base: 0x%p!\r\n"), sMemModule.lpBase);
@@ -44,7 +48,7 @@ int main()
 			_tprintf(_T("Get address of demoFunction successfully. Address: 0x%p!\r\n"), lpAddr);
 
 			// Function pointer type of demoFunction
-			typedef BOOL (WINAPI * Type_TargetFunction)(unsigned char*, unsigned int);
+			typedef BOOL (_stdcall * Type_TargetFunction)(unsigned char*, unsigned int);
 
 			// Call the demoFunction
 			Type_TargetFunction pfnFunction = (Type_TargetFunction)lpAddr;
@@ -53,8 +57,11 @@ int main()
 			if (pfnFunction(buf, MAX_PATH))
 			{
 				char* p = "{f56fee02-16d1-44a3-b191-4d7535f92ca5}";
-				::memcmp(buf, p, strlen(p));
-				iRet = 0;
+				iRet = ::memcmp(buf, p, strlen(p));
+				if (0 == iRet)
+					_tprintf(_T("Called target function demoFunction successfully with correct return value!\r\n"));
+				else
+					_tprintf(_T("Called target function demoFunction successfully, but returned unexpected value!\r\n"));
 			}
 		}
 		else

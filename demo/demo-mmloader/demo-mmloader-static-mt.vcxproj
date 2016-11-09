@@ -169,6 +169,8 @@
     </ProjectReference>
     <ProjectReference Include="..\demo-module\demo-module.vcxproj">
       <Project>{d51bc152-624c-4290-8272-db5d12a171cf}</Project>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

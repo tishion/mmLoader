@@ -11,4 +11,4 @@
 #endif
 
 // This class is exported from the demo-module.dll
-DEMOMODULE_API int demoFunction(void);
+DEMOMODULE_API BOOL _stdcall demoFunction(unsigned char* buffer, unsigned int size);

@@ -5,9 +5,9 @@
 #include "demo-module.h"
 
 // This is an example of an exported function.
-DEMOMODULE_API BOOL demoFunction(unsigned char* buffer, unsigned int size)
+DEMOMODULE_API BOOL _stdcall demoFunction(unsigned char* buffer, unsigned int size)
 {
-	if (buffer)
+	if (!buffer)
 		return FALSE;
 
 	char* p = "{f56fee02-16d1-44a3-b191-4d7535f92ca5}";
