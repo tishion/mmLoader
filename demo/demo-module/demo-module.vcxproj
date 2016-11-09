@@ -179,6 +179,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="demo-module.def" />
+    <None Include="demo-moduled.def" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

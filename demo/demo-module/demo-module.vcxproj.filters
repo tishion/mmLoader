@@ -38,5 +38,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="demo-module.def" />
+    <None Include="demo-moduled.def" />
   </ItemGroup>
 </Project>

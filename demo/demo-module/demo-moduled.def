@@ -1,0 +1,4 @@
+LIBRARY     DEMO-MODULED
+
+EXPORTS
+	demoFunction
