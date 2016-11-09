@@ -97,7 +97,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ModuleDefinitionFile>demo-module.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>demo-moduled.def</ModuleDefinitionFile>
       <ImportLibrary>$(OutDir)$(TargetName)d.lib</ImportLibrary>
     </Link>
   </ItemDefinitionGroup>
@@ -111,7 +111,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ModuleDefinitionFile>demo-module.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>demo-moduled.def</ModuleDefinitionFile>
       <ImportLibrary>$(OutDir)$(TargetName)d.lib</ImportLibrary>
     </Link>
   </ItemDefinitionGroup>
