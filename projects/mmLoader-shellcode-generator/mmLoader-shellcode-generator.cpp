@@ -364,7 +364,7 @@ int CodeBag()
 	unsigned char* pEnd = (unsigned char*)&MMLOADERSHELLCODEEND;
 
 	// Get code length
-	int codeLength = (pEnd - pStart);
+	ULONGLONG codeLength = (pEnd - pStart);
 
 	// Get the buffer length
 	size_t textLength = 512 * 1024;
@@ -420,7 +420,7 @@ int CodeBag()
 	else
 	{
 		// Write the string content to the disk file
-		if (!::WriteFile(h, pBuffer, textLength, &dwBytesWritten, NULL))
+		if (!::WriteFile(h, pBuffer, (DWORD)textLength, &dwBytesWritten, NULL))
 		{
 			ConsoleWrite("Failed to write content to file \"mmLoaderShellCode\".\r\n");
 			return -1;
