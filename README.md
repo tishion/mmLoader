@@ -1,6 +1,10 @@
 # mmLoader
 
-Load memory module.
+Library used for loading dll module bypassing Window PE loader
+
+|                                                               x86                                                              |                                                               x64                                                              |
+|:------------------------------------------------------------------------------------------------------------------------------:|:------------------------------------------------------------------------------------------------------------------------------:|
+| ![build-status](https://tishion.visualstudio.com/_apis/public/build/definitions/26071245-d50d-4615-850e-47f4d41231b9/11/badge) | ![build-status](https://tishion.visualstudio.com/_apis/public/build/definitions/26071245-d50d-4615-850e-47f4d41231b9/10/badge) |
 
 **Reformed! Provide static libray build and easy way to use shell code.**
 
@@ -18,4 +22,3 @@ There are three ways to use it.
 
 3. Use the shell code
    Build project mmLoader-shellcode-generator then run it, you will get the generated header file, put the header file in your project and enjoy it!
-
