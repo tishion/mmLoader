@@ -42,15 +42,6 @@ typedef HMODULE(WINAPI * Type_LoadLibraryA)(LPCSTR);
 typedef FARPROC(WINAPI * Type_GetProcAddress)(HMODULE, LPCSTR);
 typedef BOOL(WINAPI * Type_DllMain)(HMODULE, DWORD, LPVOID);
 
-/// <summary>
-/// 
-/// </summary>
-/// <param name="pMmeModule"></param>
-/// <param name="method"></param>
-/// <param name="lpModuleName"></param>
-/// <param name="lpProcName"></param>
-/// <param name="bCallEntry"></param>
-/// <returns></returns>
 LPVOID __stdcall MemModuleHelper(
 	PMEM_MODULE pMmeModule, 
 	MMHELPER_METHOD method, 
@@ -82,13 +73,6 @@ LPVOID __stdcall MemModuleHelper(
 	return 0;
 }
 
-/// <summary>
-/// 
-/// </summary>
-/// <param name="pMemModule"></param>
-/// <param name="lpName"></param>
-/// <param name="bCallEntry"></param>
-/// <returns></returns>
 BOOL __stdcall LoadMemModule(PMEM_MODULE pMemModule, LPCTSTR lpName, BOOL bCallEntry)
 {
 	if (NULL == pMemModule || NULL == pMemModule->pNtFuncptrsTable || NULL == lpName)
@@ -151,11 +135,6 @@ BOOL __stdcall LoadMemModule(PMEM_MODULE pMemModule, LPCTSTR lpName, BOOL bCallE
 	return TRUE;
 }
 
-/// <summary>
-/// 
-/// </summary>
-/// <param name="pMemModule"></param>
-/// <returns></returns>
 VOID __stdcall FreeMemModule(PMEM_MODULE pMemModule)
 {
 	if (NULL != pMemModule)
@@ -775,7 +754,7 @@ VOID UnmapMemModule(PMEM_MODULE pMemModule)
 /// <summary>
 /// 
 /// </summary>
-inline void MMLOADERSHELLCODEEND()
+VOID __stdcall MMLOADERSHELLCODEEND()
 {
 	MemModuleHelper(0, (MMHELPER_METHOD)0, 0, 0, 0);
 }

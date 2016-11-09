@@ -8,6 +8,7 @@
 
 int main()
 {
+	// Return value
 	int iRet = -1;
 
 	// Initialize function table
@@ -52,7 +53,7 @@ int main()
 			if (pfnFunction(buf, MAX_PATH))
 			{
 				char* p = "{f56fee02-16d1-44a3-b191-4d7535f92ca5}";
-				memcmp(buf, p, strlen(p));
+				::memcmp(buf, p, strlen(p));
 				iRet = 0;
 			}
 		}

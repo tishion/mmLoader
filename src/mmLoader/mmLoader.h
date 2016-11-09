@@ -127,9 +127,15 @@ typedef LPVOID(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, L
  *
 \************************************************************************/
 /// <summary>
-/// Helper function for using shell code.
+///
 /// </summary>
-EXTERN_C LPVOID __stdcall
+/// <param name="pMmeModule"></param>
+/// <param name="method"></param>
+/// <param name="lpModuleName"></param>
+/// <param name="lpProcName"></param>
+/// <param name="bCallEntry"></param>
+/// <returns></returns>
+LPVOID __stdcall
 MemModuleHelper(
 	_Out_ PMEM_MODULE pMmeModule, 
 	_In_ MMHELPER_METHOD method, 
@@ -138,9 +144,13 @@ MemModuleHelper(
 	_In_ BOOL bCallEntry);
 
 /// <summary>
-/// Loads the specific module as memory module.
+/// 
 /// </summary>
-EXTERN_C BOOL __stdcall
+/// <param name="pMemModule"></param>
+/// <param name="lpName"></param>
+/// <param name="bCallEntry"></param>
+/// <returns></returns>
+BOOL __stdcall
 LoadMemModule(
 	_Out_ PMEM_MODULE pMemModule,
 	_In_ LPCWSTR lpName, 
@@ -149,17 +159,26 @@ LoadMemModule(
 /// <summary>
 /// Gets the process address of the specific function in the memory module.
 /// </summary>
-EXTERN_C FARPROC __stdcall
+/// <param name="pMemModule"></param>
+/// <param name="lpName"></param>
+/// <returns></returns>
+FARPROC __stdcall
 GetMemModuleProc(
 	_Out_ PMEM_MODULE pMemModule,
 	_In_ LPCSTR lpName);
 
-EXTERN_C VOID __stdcall
+/// <summary>
+/// 
+/// </summary>
+/// <param name="pMemModule"></param>
+/// <returns></returns>
+VOID __stdcall
 FreeMemModule(_Out_ PMEM_MODULE pMemModule);
 
 /// <summary>
 /// Frees the memory module.
 /// </summary>
-EXTERN_C VOID MMLOADERSHELLCODEEND();
+VOID __stdcall
+MMLOADERSHELLCODEEND();
 
 #endif // __MMLOADER_H_INCLUDED_
