@@ -10,7 +10,7 @@
 /// <param name="uInit">Number used to initialize.</param>
 /// <param name="pBuf">The Buffer.</param>
 /// <param name="nBufSize">The size of the buffer.</param>
-inline unsigned int mml_getcrc32(unsigned int uInit, void* pBuf, unsigned int nBufSize)
+unsigned int mml_getcrc32(unsigned int uInit, void* pBuf, unsigned int nBufSize)
 {
 	unsigned int crc = 0;
 	unsigned int Crc32table[256];

@@ -26,4 +26,8 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="functionorder_x64" />
+    <None Include="functionorder_x86" />
+  </ItemGroup>
 </Project>

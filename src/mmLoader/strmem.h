@@ -6,7 +6,7 @@
 /// Gets the length of the ANSI string.
 /// </summary>
 /// <param name="psz">The string.</param>
-inline int mml_strlenA(const char* psz)
+int mml_strlenA(const char* psz)
 {
 	int i = 0;
 	for (; *psz; psz++, i++);
@@ -18,7 +18,7 @@ inline int mml_strlenA(const char* psz)
 /// </summary>
 /// <param name="psza">The first string.</param>
 /// <param name="pszb">The second string.</param>
-inline int mml_strcmpA(const char* psza, const char* pszb)
+int mml_strcmpA(const char* psza, const char* pszb)
 {
 	unsigned char c1 = 0;
 	unsigned char c2 = 0;
@@ -39,7 +39,7 @@ inline int mml_strcmpA(const char* psza, const char* pszb)
 /// <param name="pszDest">The destination string buffer.</param>
 /// <param name="pszSrc">The source string.</param>
 /// <param name="nMax">Maximum count of the character to copy.</param>
-inline wchar_t* mml_strcpyW(wchar_t* pszDest, const wchar_t* pszSrc, unsigned int nMax)
+wchar_t* mml_strcpyW(wchar_t* pszDest, const wchar_t* pszSrc, unsigned int nMax)
 {
 	while (nMax--)
 	{
@@ -53,7 +53,7 @@ inline wchar_t* mml_strcpyW(wchar_t* pszDest, const wchar_t* pszSrc, unsigned in
 /// <summary>
 /// Sets the memory with specific value.
 /// </summary>
-inline void* mml_memset(void* pv, int c, unsigned int cb)
+void* mml_memset(void* pv, int c, unsigned int cb)
 {
 	for (unsigned int i = 0; i < cb; i++) ((unsigned char*)pv)[i] = (unsigned char)c;
 	return pv;
@@ -66,7 +66,7 @@ inline void* mml_memset(void* pv, int c, unsigned int cb)
 /// <param name="pvDest">The destination buffer.</param>
 /// <param name="pvSrc">The source memory buffer.</param>
 /// <param name="cb">The count of the bytes to move.</param>
-inline void* mml_memmove(void* pvDest, const void* pvSrc, unsigned int cb)
+void* mml_memmove(void* pvDest, const void* pvSrc, unsigned int cb)
 {
 	unsigned char* pb1 = 0;
 	unsigned char* pb2 = 0;

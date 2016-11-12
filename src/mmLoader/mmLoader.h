@@ -4,16 +4,21 @@
 #include <windows.h>
 
 /// <summary>
+/// Error codes.
+/// </summary>
+#define MMEC_OK							0
+#define MMEC_BAD_PE_FORMAT				1
+#define MMEC_ALLOCATED_MEMORY_FAILED	2
+#define MMEC_INVALID_RELOCATION_BASE	3
+#define MMEC_IMPORT_MODULE_FAILED		4
+#define MMEC_PROTECT_SECTION_FAILED		5
+#define MMEC_INVALID_ENTRY_POINT		6
+
+/// <summary>
 /// Function table. These function will be used in the mmLoader.
 /// </summary>
 typedef struct __NTFUNCPTRS
 {
-	LPVOID pfnCreateFileW;			// CreateFileW
-	LPVOID pfnGetFileSize;			// GetFileSize
-	LPVOID pfnCreateFileMappingW;	// CreateFileMappingW
-	LPVOID pfnMapViewOfFile;		// MapViewOfFile
-	LPVOID pfnUnmapViewOfFile;		// UnmapViewOfFile
-	LPVOID pfnCloseHandle;			// CloseHandle
 	LPVOID pfnGetModuleHandleA;		// GetModuleHandleA
 	LPVOID pfnLoadLibraryA;			// LoadLibraryA
 	LPVOID pfnGetProcAddress;		// GetProcAddress
@@ -51,14 +56,7 @@ typedef struct __MEMMODULE
 
 	PNTFUNCPTRSTABLE pNtFuncptrsTable;	// Pointer to NT function pointers table 
 
-	struct								// Raw file resource data
-	{
-		HANDLE	h;
-		HANDLE	hMapping;
-		LPVOID	pBuffer;
-	} RawFile;
-
-	WCHAR wszModuleName[MAX_PATH];		// MemModule Name (or full file path name)
+	DWORD  dwErrorCode;				// Last error code
 
 	__MEMMODULE()
 	{
@@ -67,14 +65,11 @@ typedef struct __MEMMODULE
 		dwCrc = 0;
 		bLoadOk = 0;
 		pNtFuncptrsTable = 0;
-		RawFile.h = 0;
-		RawFile.hMapping = 0;
-		RawFile.pBuffer = 0;
+		dwErrorCode = 0;
 		
 		SYSTEM_INFO sysInfo;
 		::GetNativeSystemInfo(&sysInfo);
 		dwPageSize = sysInfo.dwPageSize;
-		for (int i = 0; i < MAX_PATH; i++) wszModuleName[i] = 0;
 	}
 } MEM_MODULE, *PMEM_MODULE;
 
@@ -91,7 +86,7 @@ typedef enum _MMHELPER_METHOD
 /// <summary>
 /// Type of the MemModuleHlper function.
 /// </summary>
-typedef LPVOID(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, LPCWSTR, LPCSTR, BOOL);
+typedef LPVOID(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, LPVOID, LPCSTR, BOOL);
 
 /************************************************************************\
  *
@@ -104,8 +99,8 @@ typedef LPVOID(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, L
  *		method:
  *			Function to be used
  *
- *		lpModuleName:
- *			name of the module to be loaded, only valid when method == MHM_BOOL_LOAD
+ *		lpPeModuleBuffer:
+ *			the raw data buffer of the pe module to be loaded, only valid when method == MHM_BOOL_LOAD
  *			
  *		lpProcName:
  *			name of the proc to be retrieved, only valid when MHM_FARPROC_GETPROC
@@ -131,7 +126,7 @@ typedef LPVOID(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, L
 /// </summary>
 /// <param name="pMmeModule"></param>
 /// <param name="method"></param>
-/// <param name="lpModuleName"></param>
+/// <param name="lpPeModuleBuffer"></param>
 /// <param name="lpProcName"></param>
 /// <param name="bCallEntry"></param>
 /// <returns></returns>
@@ -139,21 +134,21 @@ LPVOID __stdcall
 MemModuleHelper(
 	_Out_ PMEM_MODULE pMmeModule, 
 	_In_ MMHELPER_METHOD method, 
-	_In_ LPCWSTR lpModuleName,
-	_In_ LPCSTR lpProcName, 
+	_In_ LPVOID lpPeModuleBuffer,
+	_In_ LPCSTR lpProcName,
 	_In_ BOOL bCallEntry);
 
 /// <summary>
 /// 
 /// </summary>
 /// <param name="pMemModule"></param>
-/// <param name="lpName"></param>
+/// <param name="lpPeModuleBuffer"></param>
 /// <param name="bCallEntry"></param>
 /// <returns></returns>
 BOOL __stdcall
 LoadMemModule(
 	_Out_ PMEM_MODULE pMemModule,
-	_In_ LPCWSTR lpName, 
+	_In_ LPVOID lpPeModuleBuffer, 
 	_In_ BOOL bCallEntry);
 
 /// <summary>
@@ -174,11 +169,5 @@ GetMemModuleProc(
 /// <returns></returns>
 VOID __stdcall
 FreeMemModule(_Out_ PMEM_MODULE pMemModule);
-
-/// <summary>
-/// Frees the memory module.
-/// </summary>
-VOID __stdcall
-MMLOADERSHELLCODEEND();
 
 #endif // __MMLOADER_H_INCLUDED_

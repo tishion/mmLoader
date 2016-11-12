@@ -3,10 +3,8 @@
 
 #pragma region forwardDeclaration
 
-BOOL OpenAndMapView(LPCTSTR pFilePathName, PMEM_MODULE pMemModule);
-BOOL IsValidPEFormat(LPVOID pBuffer);
-BOOL MapMemModuleSections(PMEM_MODULE pMemModule);
-BOOL ReleaseRawFileResource(PMEM_MODULE pMemModule);
+BOOL IsValidPEFormat(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer);
+BOOL MapMemModuleSections(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer);
 BOOL RelocateModuleBase(PMEM_MODULE pMemModule);
 BOOL ResolveImportTable(PMEM_MODULE pMemModule);
 BOOL SetMemProtectStatus(PMEM_MODULE pMemModule);
@@ -16,24 +14,18 @@ FARPROC GetExportedProcAddress(PMEM_MODULE pMemModule, LPCSTR lpName);
 VOID UnmapMemModule(PMEM_MODULE pMemModule);
 
 // CRC32 functions
-inline unsigned int mml_getcrc32(unsigned int uInit, void* pBuf, unsigned int nBufSize);
+unsigned int mml_getcrc32(unsigned int uInit, void* pBuf, unsigned int nBufSize);
 
 // Memory functions
-inline int mml_strlenA(const char* psz);
-inline int mml_strcmpA(const char* psza, const char* pszb);
-inline wchar_t* mml_strcpyW(wchar_t* pszDest, const wchar_t* pszSrc, unsigned int nMax);
-inline void* mml_memset(void* pv, int c, unsigned int cb);
-inline void* mml_memmove(void* pvDest, const void* pvSrc, unsigned int cb);
-
+int mml_strlenA(const char* psz);
+int mml_strcmpA(const char* psza, const char* pszb);
+wchar_t* mml_strcpyW(wchar_t* pszDest, const wchar_t* pszSrc, unsigned int nMax);
+void* mml_memset(void* pv, int c, unsigned int cb);
+void* mml_memmove(void* pvDest, const void* pvSrc, unsigned int cb);
+void mmLoaderCodeEnd();
 #pragma endregion forwardDeclaration
 
 #pragma region mmLoaderImpl
-typedef HANDLE(WINAPI * Type_CreateFileW)(LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE);
-typedef DWORD(WINAPI * Type_GetFileSize)(HANDLE, LPDWORD);
-typedef HANDLE(WINAPI * Type_CreateFileMappingW)(HANDLE, LPSECURITY_ATTRIBUTES, DWORD, DWORD, DWORD, LPCWSTR);
-typedef LPVOID(WINAPI * Type_MapViewOfFile)(HANDLE, DWORD, DWORD, DWORD, SIZE_T);
-typedef BOOL(WINAPI * Type_UnmapViewOfFile)(LPVOID);
-typedef BOOL(WINAPI * Type_CloseHandle)(HANDLE);
 typedef LPVOID(WINAPI * Type_VirtualAlloc)(LPVOID, SIZE_T, DWORD, DWORD);
 typedef BOOL(WINAPI * Type_VirtualFree)(LPVOID, SIZE_T, DWORD);
 typedef BOOL(WINAPI * Type_VirtualProtect)(LPVOID, SIZE_T, DWORD, PDWORD);
@@ -45,15 +37,15 @@ typedef BOOL(WINAPI * Type_DllMain)(HMODULE, DWORD, LPVOID);
 LPVOID __stdcall MemModuleHelper(
 	PMEM_MODULE pMmeModule, 
 	MMHELPER_METHOD method, 
-	LPCTSTR lpModuleName, 
-	LPCSTR lpProcName, 
+	LPVOID lpPeModuleBuffer,
+	LPCSTR lpProcName,
 	BOOL bCallEntry)
 {
 	switch (method)
 	{
 	case MHM_BOOL_LOAD:
 		{
-			return (LPVOID)(INT_PTR)LoadMemModule(pMmeModule, lpModuleName, bCallEntry);
+			return (LPVOID)(INT_PTR)LoadMemModule(pMmeModule, lpPeModuleBuffer, bCallEntry);
 		}
 		break;
 	case MHM_VOID_FREE:
@@ -73,24 +65,21 @@ LPVOID __stdcall MemModuleHelper(
 	return 0;
 }
 
-BOOL __stdcall LoadMemModule(PMEM_MODULE pMemModule, LPCTSTR lpName, BOOL bCallEntry)
+BOOL __stdcall LoadMemModule(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer, BOOL bCallEntry)
 {
-	if (NULL == pMemModule || NULL == pMemModule->pNtFuncptrsTable || NULL == lpName)
+	if (NULL == pMemModule || NULL == pMemModule->pNtFuncptrsTable || NULL == lpPeModuleBuffer)
 		return FALSE;
 
-	// Open file and map memory
-	if (FALSE == OpenAndMapView(lpName, pMemModule))
-		return FALSE;
+	pMemModule->dwErrorCode = ERROR_SUCCESS;
 
 	// Verify file format
-	if (FALSE == IsValidPEFormat(pMemModule->RawFile.pBuffer))
+	if (FALSE == IsValidPEFormat(pMemModule, lpPeModuleBuffer))
+	{
 		return FALSE;
+	}
 
 	// Map PE header and section table into memory
-	if (FALSE == MapMemModuleSections(pMemModule))
-		return FALSE;
-
-	if (FALSE == ReleaseRawFileResource(pMemModule))
+	if (FALSE == MapMemModuleSections(pMemModule, lpPeModuleBuffer))
 		return FALSE;
 
 	// Relocate the module base
@@ -109,7 +98,6 @@ BOOL __stdcall LoadMemModule(PMEM_MODULE pMemModule, LPCTSTR lpName, BOOL bCallE
 
 	pMemModule->dwCrc = mml_getcrc32(
 		0, pMemModule->lpBase, pMemModule->dwSizeOfImage);
-	mml_strcpyW(pMemModule->wszModuleName, lpName, _countof(pMemModule->wszModuleName));
 
 	// Correct the protect flag for all section pages
 	if (FALSE == SetMemProtectStatus(pMemModule))
@@ -139,6 +127,7 @@ VOID __stdcall FreeMemModule(PMEM_MODULE pMemModule)
 {
 	if (NULL != pMemModule)
 	{
+		pMemModule->dwErrorCode = ERROR_SUCCESS;
 		CallModuleEntry(pMemModule, DLL_PROCESS_DETACH);
 		UnmapMemModule(pMemModule);
 	}
@@ -147,7 +136,10 @@ VOID __stdcall FreeMemModule(PMEM_MODULE pMemModule)
 FARPROC __stdcall GetMemModuleProc(PMEM_MODULE pMemModule, LPCSTR lpName)
 {
 	if (NULL != pMemModule && lpName != NULL)
+	{
+		pMemModule->dwErrorCode = ERROR_SUCCESS;
 		return GetExportedProcAddress(pMemModule, lpName);
+	}
 
 	return NULL;
 }
@@ -155,7 +147,8 @@ FARPROC __stdcall GetMemModuleProc(PMEM_MODULE pMemModule, LPCSTR lpName)
 /// <summary>
 /// Tests the return value.
 /// </summary>
-#define IfFalseGoExit(x) { br=(x); if (!br) goto _Exit; }
+#define IfFalseGoExitWithError(x, exp) do { if (!(br = (x)) && (exp)) goto _Exit; } while (0)
+#define IfFalseGoExit(x) do { if (!(br = (x))) goto _Exit; } while (0)
 
 /// <summary>
 /// Create a pointer value.
@@ -163,98 +156,25 @@ FARPROC __stdcall GetMemModuleProc(PMEM_MODULE pMemModule, LPCSTR lpName)
 #define MakePointer(t, p, offset) ((t)((PUINT8)(p) + offset))
 
 /// <summary>
-/// Opens and maps the view of the disk file.
-/// </summary>
-/// <param name="pFilePathName"></param>
-/// <param name="pMemModule"></param>
-/// <returns></returns>
-BOOL OpenAndMapView(LPCTSTR pFilePathName, PMEM_MODULE pMemModule)
-{
-	if (NULL == pMemModule || NULL == pMemModule->pNtFuncptrsTable)
-		return FALSE;
-
-	Type_CreateFileW pfnCreateFileW = (Type_CreateFileW)(pMemModule->pNtFuncptrsTable->pfnCreateFileW);
-	Type_GetFileSize pfnGetFileSize = (Type_GetFileSize)(pMemModule->pNtFuncptrsTable->pfnGetFileSize);
-	Type_CreateFileMappingW pfnCreateFileMappingW = (Type_CreateFileMappingW)(pMemModule->pNtFuncptrsTable->pfnCreateFileMappingW);
-	Type_MapViewOfFile pfnMapViewOfFile = (Type_MapViewOfFile)(pMemModule->pNtFuncptrsTable->pfnMapViewOfFile);
-
-	BOOL br = FALSE;
-	pMemModule->RawFile.h = pfnCreateFileW(pFilePathName, GENERIC_READ, FILE_SHARE_READ, 
-		NULL, OPEN_EXISTING, NULL, NULL);
-	IfFalseGoExit(INVALID_HANDLE_VALUE != pMemModule->RawFile.h);
-	IfFalseGoExit(NULL != pMemModule->RawFile.h);
-
-	// Check file size
-	DWORD dwFileSize = pfnGetFileSize(pMemModule->RawFile.h, NULL);
-	IfFalseGoExit(INVALID_FILE_SIZE != dwFileSize);
-
-	// If file size is less than DOS header, invalid file.
-	IfFalseGoExit(dwFileSize > (sizeof(IMAGE_DOS_HEADER)));
-
-	pMemModule->RawFile.hMapping = pfnCreateFileMappingW(pMemModule->RawFile.h, 0, PAGE_READONLY, 0, 0, NULL);
-	IfFalseGoExit(NULL != pMemModule->RawFile.hMapping);
-
-	pMemModule->RawFile.pBuffer = pfnMapViewOfFile(pMemModule->RawFile.hMapping, FILE_MAP_READ, 0, 0, 0);
-	IfFalseGoExit(NULL != pMemModule->RawFile.pBuffer);
-
-_Exit:
-	return br;
-}
-
-/// <summary>
-/// 
-/// </summary>
-/// <param name="pMemModule"></param>
-/// <returns></returns>
-BOOL ReleaseRawFileResource(PMEM_MODULE pMemModule)
-{
-	if (NULL == pMemModule || NULL == pMemModule->pNtFuncptrsTable)
-		return FALSE;
-
-	Type_UnmapViewOfFile pfnUnmapViewOfFile = (Type_UnmapViewOfFile)(pMemModule->pNtFuncptrsTable->pfnUnmapViewOfFile);
-	Type_CloseHandle pfnCloseHandle = (Type_CloseHandle)(pMemModule->pNtFuncptrsTable->pfnCloseHandle);
-
-	if (pMemModule->RawFile.pBuffer)
-	{
-		pfnUnmapViewOfFile(pMemModule->RawFile.pBuffer);
-		pMemModule->RawFile.pBuffer = NULL;
-	}
-
-	if (pMemModule->RawFile.hMapping)
-	{
-		pfnCloseHandle(pMemModule->RawFile.hMapping);
-		pMemModule->RawFile.hMapping = NULL;
-	}
-
-	if (pMemModule->RawFile.h)
-	{
-		pfnCloseHandle(pMemModule->RawFile.h);
-		pMemModule->RawFile.h = INVALID_HANDLE_VALUE;
-	}
-
-	return TRUE;
-}
-
-/// <summary>
 /// 
 /// </summary>
 /// <param name="pBuffer"></param>
 /// <returns></returns>
-BOOL IsValidPEFormat(LPVOID pBuffer)
+BOOL IsValidPEFormat(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer)
 {
-	if (NULL == pBuffer)
+	if (NULL == pMemModule || NULL == pMemModule->pNtFuncptrsTable)
 		return FALSE;
 
 	BOOL br = FALSE;
 
-	PIMAGE_DOS_HEADER pImageDosHeader = (PIMAGE_DOS_HEADER)pBuffer;
+	PIMAGE_DOS_HEADER pImageDosHeader = (PIMAGE_DOS_HEADER)lpPeModuleBuffer;
 
 	// Check the MZ signature
 	IfFalseGoExit(IMAGE_DOS_SIGNATURE == pImageDosHeader->e_magic);
 
 	// Check PE signature
 	PIMAGE_NT_HEADERS pImageNtHeader =
-		MakePointer(PIMAGE_NT_HEADERS, pBuffer, pImageDosHeader->e_lfanew);
+		MakePointer(PIMAGE_NT_HEADERS, lpPeModuleBuffer, pImageDosHeader->e_lfanew);
 	IfFalseGoExit(IMAGE_NT_SIGNATURE == pImageNtHeader->Signature);
 
 #ifdef _WIN64
@@ -269,9 +189,10 @@ BOOL IsValidPEFormat(LPVOID pBuffer)
 	}
 #endif
 	else
-		IfFalseGoExit(FALSE);
+		br = FALSE;
 
 _Exit:
+	if (!br) pMemModule->dwErrorCode = MMEC_BAD_PE_FORMAT;
 	return br;
 }
 
@@ -280,10 +201,10 @@ _Exit:
 /// </summary>
 /// <param name="pMemModule"></param>
 /// <returns></returns>
-BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
+BOOL MapMemModuleSections(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer)
 {
 	// Validate
-	if (NULL == pMemModule || NULL == pMemModule->pNtFuncptrsTable || NULL == pMemModule->RawFile.pBuffer)
+	if (NULL == pMemModule || NULL == pMemModule->pNtFuncptrsTable || NULL == lpPeModuleBuffer)
 		return FALSE;
 
 	// Function pointer
@@ -291,7 +212,7 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 	Type_VirtualFree pfnVirtualFree = (Type_VirtualFree)(pMemModule->pNtFuncptrsTable->pfnVirtualFree);
 
 	// Convert to IMAGE_DOS_HEADER
-	PIMAGE_DOS_HEADER pImageDosHeader = (PIMAGE_DOS_HEADER)(pMemModule->RawFile.pBuffer);
+	PIMAGE_DOS_HEADER pImageDosHeader = (PIMAGE_DOS_HEADER)(lpPeModuleBuffer);
 
 	// Get the pointer to IMAGE_NT_HEADERS
 	PIMAGE_NT_HEADERS pImageNtHeader = MakePointer(
@@ -333,13 +254,21 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 			PAGE_READWRITE);
 
 		// Failed again, return 
-		if (NULL == lpBase) return FALSE;
+		if (NULL == lpBase)
+		{
+			pMemModule->dwErrorCode = MMEC_ALLOCATED_MEMORY_FAILED;
+			return FALSE;
+		}
 	}
 
 	// Commit memory for PE header
 	LPVOID pDest = pfnVirtualAlloc(lpBase, pImageNtHeader->OptionalHeader.SizeOfHeaders, MEM_COMMIT, PAGE_READWRITE);
-	if (!pDest) return FALSE;
-	mml_memmove(pDest, pMemModule->RawFile.pBuffer, pImageNtHeader->OptionalHeader.SizeOfHeaders);
+	if (!pDest)
+	{
+		pMemModule->dwErrorCode = MMEC_ALLOCATED_MEMORY_FAILED;
+		return FALSE;
+	}
+	mml_memmove(pDest, lpPeModuleBuffer, pImageNtHeader->OptionalHeader.SizeOfHeaders);
 	// store the base address of this module.
 	pMemModule->lpBase = pDest;
 	pMemModule->dwSizeOfImage = pImageNtHeader->OptionalHeader.SizeOfImage;
@@ -364,8 +293,11 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 				{
 					pDest = pfnVirtualAlloc(pSectionBase, pImageNtHeader->OptionalHeader.SectionAlignment,
 						MEM_COMMIT, PAGE_READWRITE);
-					if (NULL == pDest) return FALSE;
-
+					if (NULL == pDest)
+					{
+						pMemModule->dwErrorCode = MMEC_ALLOCATED_MEMORY_FAILED;
+						return FALSE;
+					}
 					// Always use position from file to support alignments smaller than page size.
 					mml_memset(pSectionBase, 0, pImageNtHeader->OptionalHeader.SectionAlignment);
 				}
@@ -374,8 +306,12 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule)
 			{
 				// Commit this section to target address
 				pDest = pfnVirtualAlloc(pSectionBase, pImageSectionHeader[i].SizeOfRawData, MEM_COMMIT, PAGE_READWRITE);
-				if (NULL == pDest) return FALSE;
-				pSectionDataSource = MakePointer(LPVOID, pMemModule->RawFile.pBuffer, pImageSectionHeader[i].PointerToRawData);
+				if (NULL == pDest)
+				{
+					pMemModule->dwErrorCode = MMEC_ALLOCATED_MEMORY_FAILED;
+					return FALSE;
+				}
+				pSectionDataSource = MakePointer(LPVOID, lpPeModuleBuffer, pImageSectionHeader[i].PointerToRawData);
 				mml_memmove(pDest, pSectionDataSource, pImageSectionHeader[i].SizeOfRawData);
 			}
 
@@ -414,7 +350,11 @@ BOOL RelocateModuleBase(PMEM_MODULE pMemModule)
 	PIMAGE_BASE_RELOCATION pImageBaseRelocation = MakePointer(PIMAGE_BASE_RELOCATION, pMemModule->lpBase, 
 		pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
 
-	if (NULL == pImageBaseRelocation) return FALSE;
+	if (NULL == pImageBaseRelocation)
+	{
+		pMemModule->dwErrorCode = MMEC_INVALID_RELOCATION_BASE;
+		return FALSE;
+	}
 
 	while (0 != (pImageBaseRelocation->VirtualAddress + pImageBaseRelocation->SizeOfBlock))
 	{
@@ -480,8 +420,11 @@ BOOL ResolveImportTable(PMEM_MODULE pMemModule)
 		if (NULL == hMod) hMod = pfnLoadLibraryA(pDllName);
 
 		// Failed
-		if (NULL == hMod) return FALSE;
-
+		if (NULL == hMod)
+		{
+			pMemModule->dwErrorCode = MMEC_IMPORT_MODULE_FAILED;
+			return FALSE;
+		}
 		// Original thunk
 		PIMAGE_THUNK_DATA pOriginalThunk = NULL;
 		if (pImageImportDescriptor->OriginalFirstThunk)
@@ -579,8 +522,7 @@ BOOL SetMemProtectStatus(PMEM_MODULE pMemModule)
 		// Discardable
 		if (dwSectionCharacteristics & IMAGE_SCN_MEM_DISCARDABLE)
 		{
-			if (!pfnVirtualFree((LPVOID)dwSectionBase, dwSecionSize, MEM_DECOMMIT))
-				return FALSE;
+			pfnVirtualFree((LPVOID)dwSectionBase, dwSecionSize, MEM_DECOMMIT);
 			continue;
 		}
 
@@ -602,7 +544,10 @@ BOOL SetMemProtectStatus(PMEM_MODULE pMemModule)
 		protectFlag = ProtectionMatrix[isExecutable][isReadable][isWritable];
 		if (isNotCache) protectFlag |= PAGE_NOCACHE;
 		if (!pfnVirtualProtect((LPVOID)dwSectionBase, dwSecionSize, protectFlag, &oldProtect))
+		{
+			pMemModule->dwErrorCode = MMEC_PROTECT_SECTION_FAILED;
 			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -663,7 +608,10 @@ BOOL CallModuleEntry(PMEM_MODULE pMemModule, DWORD dwReason)
 		pImageNtHeader->OptionalHeader.AddressOfEntryPoint);
 
 	if (NULL == pfnModuleEntry)
+	{
+		pMemModule->dwErrorCode = MMEC_INVALID_ENTRY_POINT;
 		return FALSE;
+	}
 
 	return pfnModuleEntry(pMemModule->hModule, dwReason, NULL);
 }
@@ -741,8 +689,6 @@ VOID UnmapMemModule(PMEM_MODULE pMemModule)
 	pMemModule->dwCrc = 0;
 	pMemModule->dwSizeOfImage = 0;
 	pMemModule->bLoadOk = FALSE;
-
-	mml_memset(pMemModule->wszModuleName, 0, sizeof(pMemModule->wszModuleName));
 }
 
 //
@@ -751,12 +697,10 @@ VOID UnmapMemModule(PMEM_MODULE pMemModule)
 //
 #include "crc.h"
 
-/// <summary>
-/// 
-/// </summary>
-VOID __stdcall MMLOADERSHELLCODEEND()
+//
+void mmLoaderCodeEnd()
 {
-	MemModuleHelper(0, (MMHELPER_METHOD)0, 0, 0, 0);
+	return;
 }
 
 #pragma endregion mmLoaderImpl

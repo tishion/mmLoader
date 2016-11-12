@@ -26,12 +26,6 @@ int main()
 
 	// Initialize function table
 	NTFUNCPTRSTABLE sNtFuncPtrsTable;
-	sNtFuncPtrsTable.pfnCreateFileW = ::CreateFileW;
-	sNtFuncPtrsTable.pfnGetFileSize = ::GetFileSize;
-	sNtFuncPtrsTable.pfnCreateFileMappingW = ::CreateFileMappingW;
-	sNtFuncPtrsTable.pfnMapViewOfFile = ::MapViewOfFile;
-	sNtFuncPtrsTable.pfnUnmapViewOfFile = ::UnmapViewOfFile;
-	sNtFuncPtrsTable.pfnCloseHandle = ::CloseHandle;
 	sNtFuncPtrsTable.pfnGetModuleHandleA = ::GetModuleHandleA;
 	sNtFuncPtrsTable.pfnLoadLibraryA = ::LoadLibraryA;
 	sNtFuncPtrsTable.pfnGetProcAddress = ::GetProcAddress;
@@ -41,7 +35,6 @@ int main()
 
 	// Memory module
 	MEM_MODULE sMemModule;
-	sMemModule.RawFile.h = INVALID_HANDLE_VALUE;
 	sMemModule.pNtFuncptrsTable = &sNtFuncPtrsTable;
 
 	// Allocate memory buffer for shell code with EXECUTE privilege
@@ -64,9 +57,53 @@ int main()
 	Type_MemModuleHelper pfnMemModuleHelper = (Type_MemModuleHelper)lpShellCodeBase;
 
 	// Load the module
+#ifdef _DEBUG
+	WCHAR wszDllPath[] = L"demo-moduled.dll";
+#else
 	WCHAR wszDllPath[] = L"demo-module.dll";
-	if (pfnMemModuleHelper(&sMemModule, MHM_BOOL_LOAD, wszDllPath, NULL, FALSE))
+#endif
+
+	// Open the module and read it into memory buffer
+	BOOL br = FALSE;
+	HANDLE hFile = ::CreateFileW(wszDllPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
+	if (INVALID_HANDLE_VALUE == hFile || NULL == hFile)
 	{
+		wprintf(L"Failed to open the file: %s\r\n", wszDllPath);
+		return iRet;
+	}
+
+	// Check file size
+	DWORD dwFileSize = ::GetFileSize(hFile, NULL);
+	if (INVALID_FILE_SIZE == dwFileSize || dwFileSize < sizeof(IMAGE_DOS_HEADER))
+	{
+		::CloseHandle(hFile);
+		_tprintf(_T("Invalid file size: %d\r\n"), dwFileSize);
+		return iRet;
+	}
+
+	HANDLE hFileMapping = ::CreateFileMappingW(hFile, 0, PAGE_READONLY, 0, 0, NULL);
+	if (NULL == hFileMapping)
+	{
+		::CloseHandle(hFile);
+		_tprintf(_T("Failed to create file mapping.\r\n"));
+		return iRet;
+	}
+
+	LPVOID pBuffer = ::MapViewOfFile(hFileMapping, FILE_MAP_READ, 0, 0, 0);
+	if (NULL == pBuffer)
+	{
+		::CloseHandle(hFileMapping);
+		::CloseHandle(hFile);
+		_tprintf(_T("Failed to map view of the file.\r\n"));
+		return iRet;
+	}
+
+	if (pfnMemModuleHelper(&sMemModule, MHM_BOOL_LOAD, pBuffer, NULL, FALSE))
+	{
+		::UnmapViewOfFile(pBuffer);
+		::CloseHandle(hFileMapping);
+		::CloseHandle(hFile);
+
 		_tprintf(_T("Module was load successfully. Module Base: 0x%p!\r\n"), sMemModule.lpBase);
 
 		// Get address of function demoFunction

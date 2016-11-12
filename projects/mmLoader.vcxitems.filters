@@ -9,15 +9,15 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\src\mmLoader\mmLoader.cpp">
       <Filter>mmLoader</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\src\mmLoader\crc.h">
-      <Filter>mmLoader</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\src\mmLoader\strmem.h">
-      <Filter>mmLoader</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\src\mmLoader\mmLoader.h">
+      <Filter>mmLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\src\mmLoader\crc.h">
+      <Filter>mmLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\src\mmLoader\strmem.h">
       <Filter>mmLoader</Filter>
     </ClInclude>
   </ItemGroup>
