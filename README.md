@@ -1,4 +1,4 @@
-# mmLoader
+# mmLoader - x86/x64 stable library of memory module loader
 
 Library used for loading dll module bypassing Window PE loader
 
