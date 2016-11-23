@@ -133,6 +133,9 @@
     <PostBuildEvent>
       <Command>"$(TargetPath)" "$(SolutionDir)\output\include\mmLoader"</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>xcopy /s /e /y "$(SolutionDir)src\mmLoader\mmLoader.h" "$(SolutionDir)output\include\mmLoader\*"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -170,6 +173,9 @@
     <PostBuildEvent>
       <Command>"$(TargetPath)" "$(SolutionDir)\output\include\mmLoader"</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>xcopy /s /e /y "$(SolutionDir)src\mmLoader\mmLoader.h" "$(SolutionDir)output\include\mmLoader\*"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -204,6 +210,9 @@
     <PostBuildEvent>
       <Command>"$(TargetPath)" "$(SolutionDir)\output\include\mmLoader"</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>xcopy /s /e /y "$(SolutionDir)src\mmLoader\mmLoader.h" "$(SolutionDir)output\include\mmLoader\*"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -239,6 +248,9 @@
     <PostBuildEvent>
       <Command>"$(TargetPath)" "$(SolutionDir)\output\include\mmLoader"</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>xcopy /s /e /y "$(SolutionDir)src\mmLoader\mmLoader.h" "$(SolutionDir)output\include\mmLoader\*"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
