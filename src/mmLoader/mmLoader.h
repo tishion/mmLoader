@@ -19,12 +19,12 @@
 /// </summary>
 typedef struct __NTFUNCPTRS
 {
-	LPVOID pfnGetModuleHandleA;		// GetModuleHandleA
-	LPVOID pfnLoadLibraryA;			// LoadLibraryA
-	LPVOID pfnGetProcAddress;		// GetProcAddress
-	LPVOID pfnVirtualAlloc;			// VirtualAlloc
-	LPVOID pfnVirtualFree;			// VirtualFree
-	LPVOID pfnVirtualProtect;		// VirtualProtect
+	LPVOID pfnGetModuleHandleA;			// GetModuleHandleA
+	LPVOID pfnLoadLibraryA;				// LoadLibraryA
+	LPVOID pfnGetProcAddress;			// GetProcAddress
+	LPVOID pfnVirtualAlloc;				// VirtualAlloc
+	LPVOID pfnVirtualFree;				// VirtualFree
+	LPVOID pfnVirtualProtect;			// VirtualProtect
 	LPVOID pfnReversed_0;
 	LPVOID pfnReversed_1;
 	LPVOID pfnReversed_2;
@@ -56,7 +56,7 @@ typedef struct __MEMMODULE
 
 	PNTFUNCPTRSTABLE pNtFuncptrsTable;	// Pointer to NT function pointers table 
 
-	DWORD  dwErrorCode;				// Last error code
+	DWORD  dwErrorCode;					// Last error code
 
 	__MEMMODULE()
 	{
@@ -78,58 +78,49 @@ typedef struct __MEMMODULE
 /// </summary>
 typedef enum _MMHELPER_METHOD
 {
-	MHM_BOOL_LOAD,
-	MHM_VOID_FREE,
-	MHM_FARPROC_GETPROC,
+	MHM_BOOL_LOAD,						// Call LoadMemModule
+	MHM_VOID_FREE,						// Call FreeMemModule
+	MHM_FARPROC_GETPROC,				// Call GetMemModuleProc
 } MMHELPER_METHOD;
 
 /// <summary>
-/// Type of the MemModuleHlper function.
+/// Helper function for using shell code.
 /// </summary>
+/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
+/// <param name="method">The <see cref="MMHELPER_METHOD"> to call.</param>
+/// <param name="lpPeModuleBuffer">The buffer containing the raw data of the module.</param>
+/// <param name="lpName">The function name.</param>
+/// <returns>True if the module is loaded successfully.</returns>
+/// <returns>
+/// If method is MHM_BOOL_LOAD:
+///		The return value type is BOOL.
+///
+/// If method is MHM_FARPROC_GETPROC
+///		The return value type if FARPROC.
+///
+/// If method is MHM_VOID_FREE
+///		There is no return value.
+/// </returns>
 typedef LPVOID(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, LPVOID, LPCSTR, BOOL);
 
-/************************************************************************\
- *
- * Auxiliary Function:
- *		use the mmLoader through this function after it is loaded from shell code.
- *
- * Parameters:
- *		pMmeModule:
- *
- *		method:
- *			Function to be used
- *
- *		lpPeModuleBuffer:
- *			the raw data buffer of the pe module to be loaded, only valid when method == MHM_BOOL_LOAD
- *			
- *		lpProcName:
- *			name of the proc to be retrieved, only valid when MHM_FARPROC_GETPROC
- *			
- *		bCallEntry:
- *			need to call the module entry point?
- *
- *	return value:
- *		when method == MHM_BOOL_LOAD
- *			return the resulT of loading, TRUE or FALSE
- *
- *		when method MHM_VOID_FREE:
- *			no return value
- *
- *		when method == MHM_FARPROC_GETPROC
- *			return the address of the target proc, return NULL when failed to get the address
- *
- *
- *
-\************************************************************************/
 /// <summary>
-///
+/// Helper function for using shell code.
 /// </summary>
-/// <param name="pMmeModule"></param>
-/// <param name="method"></param>
-/// <param name="lpPeModuleBuffer"></param>
-/// <param name="lpProcName"></param>
-/// <param name="bCallEntry"></param>
-/// <returns></returns>
+/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
+/// <param name="method">The <see cref="MMHELPER_METHOD"> to call.</param>
+/// <param name="lpPeModuleBuffer">The buffer containing the raw data of the module.</param>
+/// <param name="lpName">The function name.</param>
+/// <returns>True if the module is loaded successfully.</returns>
+/// <returns>
+/// If method is MHM_BOOL_LOAD:
+///		The return value type is BOOL.
+///
+/// If method is MHM_FARPROC_GETPROC
+///		The return value type if FARPROC.
+///
+/// If method is MHM_VOID_FREE
+///		There is no return value.
+/// </returns>
 LPVOID __stdcall
 MemModuleHelper(
 	_Out_ PMEM_MODULE pMmeModule, 
@@ -139,12 +130,12 @@ MemModuleHelper(
 	_In_ BOOL bCallEntry);
 
 /// <summary>
-/// 
+/// Loads the memory module.
 /// </summary>
-/// <param name="pMemModule"></param>
-/// <param name="lpPeModuleBuffer"></param>
-/// <param name="bCallEntry"></param>
-/// <returns></returns>
+/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
+/// <param name="lpPeModuleBuffer">The buffer containing the raw data of the module.</param>
+/// <param name="bCallEntry">Call the module entry if true.</param>
+/// <returns>True if the module is loaded successfully.</returns>
 BOOL __stdcall
 LoadMemModule(
 	_Out_ PMEM_MODULE pMemModule,
@@ -154,19 +145,18 @@ LoadMemModule(
 /// <summary>
 /// Gets the process address of the specific function in the memory module.
 /// </summary>
-/// <param name="pMemModule"></param>
-/// <param name="lpName"></param>
-/// <returns></returns>
+/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
+/// <param name="lpName">The function name.</param>
+/// <returns>The address of the function or null.</returns>
 FARPROC __stdcall
 GetMemModuleProc(
 	_Out_ PMEM_MODULE pMemModule,
 	_In_ LPCSTR lpName);
 
 /// <summary>
-/// 
+/// Frees the memory module.
 /// </summary>
-/// <param name="pMemModule"></param>
-/// <returns></returns>
+/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
 VOID __stdcall
 FreeMemModule(_Out_ PMEM_MODULE pMemModule);
 

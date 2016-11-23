@@ -23,6 +23,7 @@ wchar_t* mml_strcpyW(wchar_t* pszDest, const wchar_t* pszSrc, unsigned int nMax)
 void* mml_memset(void* pv, int c, unsigned int cb);
 void* mml_memmove(void* pvDest, const void* pvSrc, unsigned int cb);
 void mmLoaderCodeEnd();
+
 #pragma endregion forwardDeclaration
 
 #pragma region mmLoaderImpl
@@ -127,6 +128,7 @@ VOID __stdcall FreeMemModule(PMEM_MODULE pMemModule)
 {
 	if (NULL != pMemModule)
 	{
+		// Free the module
 		pMemModule->dwErrorCode = ERROR_SUCCESS;
 		CallModuleEntry(pMemModule, DLL_PROCESS_DETACH);
 		UnmapMemModule(pMemModule);
@@ -137,6 +139,7 @@ FARPROC __stdcall GetMemModuleProc(PMEM_MODULE pMemModule, LPCSTR lpName)
 {
 	if (NULL != pMemModule && lpName != NULL)
 	{
+		// Get the address of the specific function
 		pMemModule->dwErrorCode = ERROR_SUCCESS;
 		return GetExportedProcAddress(pMemModule, lpName);
 	}
@@ -145,9 +148,13 @@ FARPROC __stdcall GetMemModuleProc(PMEM_MODULE pMemModule, LPCSTR lpName)
 }
 
 /// <summary>
-/// Tests the return value.
+/// Tests the return value and jump to exit label if false.
 /// </summary>
 #define IfFalseGoExitWithError(x, exp) do { if (!(br = (x)) && (exp)) goto _Exit; } while (0)
+
+/// <summary>
+/// Tests the return value and jump to exit label if false.
+/// </summary>
 #define IfFalseGoExit(x) do { if (!(br = (x))) goto _Exit; } while (0)
 
 /// <summary>
@@ -156,17 +163,20 @@ FARPROC __stdcall GetMemModuleProc(PMEM_MODULE pMemModule, LPCSTR lpName)
 #define MakePointer(t, p, offset) ((t)((PUINT8)(p) + offset))
 
 /// <summary>
-/// 
+/// Verifies the format of the buffer content.
 /// </summary>
-/// <param name="pBuffer"></param>
-/// <returns></returns>
+/// <param name="pBuffer">The buffer containing the file data.</param>
+/// <returns>True if the data is valid PE format.</returns>
 BOOL IsValidPEFormat(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer)
 {
+	// Validate the parameters
 	if (NULL == pMemModule || NULL == pMemModule->pNtFuncptrsTable)
 		return FALSE;
 
+	// Initialize the return value
 	BOOL br = FALSE;
 
+	// Get the DOS header
 	PIMAGE_DOS_HEADER pImageDosHeader = (PIMAGE_DOS_HEADER)lpPeModuleBuffer;
 
 	// Check the MZ signature
@@ -178,11 +188,13 @@ BOOL IsValidPEFormat(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer)
 	IfFalseGoExit(IMAGE_NT_SIGNATURE == pImageNtHeader->Signature);
 
 #ifdef _WIN64
+	// Check the machine type
 	if (IMAGE_FILE_MACHINE_AMD64 == pImageNtHeader->FileHeader.Machine)
 	{
 		IfFalseGoExit(IMAGE_NT_OPTIONAL_HDR64_MAGIC == pImageNtHeader->OptionalHeader.Magic);
 	}
 #else
+	// Check the machine type
 	if (IMAGE_FILE_MACHINE_I386 == pImageNtHeader->FileHeader.Machine)
 	{
 		IfFalseGoExit(IMAGE_NT_OPTIONAL_HDR32_MAGIC == pImageNtHeader->OptionalHeader.Magic);
@@ -192,15 +204,16 @@ BOOL IsValidPEFormat(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer)
 		br = FALSE;
 
 _Exit:
+	// If this is invalid PE file data return error
 	if (!br) pMemModule->dwErrorCode = MMEC_BAD_PE_FORMAT;
 	return br;
 }
 
 /// <summary>
-/// 
+/// Maps all the sections.
 /// </summary>
-/// <param name="pMemModule"></param>
-/// <returns></returns>
+/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
+/// <returns>True if successful.</returns>
 BOOL MapMemModuleSections(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer)
 {
 	// Validate
@@ -218,13 +231,15 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer)
 	PIMAGE_NT_HEADERS pImageNtHeader = MakePointer(
 		PIMAGE_NT_HEADERS, pImageDosHeader, pImageDosHeader->e_lfanew);
 	
+	// Get the section count
 	int nNumberOfSections = pImageNtHeader->FileHeader.NumberOfSections;
 	
+	// Get the section header
 	PIMAGE_SECTION_HEADER pImageSectionHeader = MakePointer(
 		PIMAGE_SECTION_HEADER, pImageNtHeader, sizeof(IMAGE_NT_HEADERS));
 
+	// Find the last section limit
 	DWORD dwImageSizeLimit = 0;
-	// Find last section limit
 	for (int i = 0; i < nNumberOfSections; ++i)
 	{
 		if (0 != pImageSectionHeader[i].VirtualAddress)
@@ -234,6 +249,7 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer)
 		}
 	}
 
+	// Align the last image size limit to the page size
 	dwImageSizeLimit = (dwImageSizeLimit + pMemModule->dwPageSize - 1) & ~(pMemModule->dwPageSize - 1);
 
 	// Reserve virtual memory 
@@ -268,29 +284,35 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer)
 		pMemModule->dwErrorCode = MMEC_ALLOCATED_MEMORY_FAILED;
 		return FALSE;
 	}
+	
+	// Copy the data of PE header to the memory allocated
 	mml_memmove(pDest, lpPeModuleBuffer, pImageNtHeader->OptionalHeader.SizeOfHeaders);
-	// store the base address of this module.
+
+	// Store the base address of this module.
 	pMemModule->lpBase = pDest;
 	pMemModule->dwSizeOfImage = pImageNtHeader->OptionalHeader.SizeOfImage;
 	pMemModule->bLoadOk = TRUE;
 
+	// Get the DOS header, NT header and Section header from the new PE header buffer
 	pImageDosHeader = (PIMAGE_DOS_HEADER)pDest;
 	pImageNtHeader = MakePointer(PIMAGE_NT_HEADERS, pImageDosHeader, pImageDosHeader->e_lfanew);
 	pImageSectionHeader = MakePointer(PIMAGE_SECTION_HEADER, pImageNtHeader, sizeof(IMAGE_NT_HEADERS));
 
+	// Map all section data into the memory
 	LPVOID pSectionBase = NULL;
 	LPVOID pSectionDataSource = NULL;
-
 	for (int i = 0; i < nNumberOfSections; ++i)
 	{
 		if (0 != pImageSectionHeader[i].VirtualAddress)
 		{
+			// Get the section base
 			pSectionBase = MakePointer(LPVOID, lpBase, pImageSectionHeader[i].VirtualAddress);
 
 			if (0 == pImageSectionHeader[i].SizeOfRawData)
 			{
 				if (pImageNtHeader->OptionalHeader.SectionAlignment > 0)
 				{
+					// If the size is zero, but the section alignment is not zero then allocate memory with the aligment
 					pDest = pfnVirtualAlloc(pSectionBase, pImageNtHeader->OptionalHeader.SectionAlignment,
 						MEM_COMMIT, PAGE_READWRITE);
 					if (NULL == pDest)
@@ -298,6 +320,7 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer)
 						pMemModule->dwErrorCode = MMEC_ALLOCATED_MEMORY_FAILED;
 						return FALSE;
 					}
+
 					// Always use position from file to support alignments smaller than page size.
 					mml_memset(pSectionBase, 0, pImageNtHeader->OptionalHeader.SectionAlignment);
 				}
@@ -311,10 +334,13 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer)
 					pMemModule->dwErrorCode = MMEC_ALLOCATED_MEMORY_FAILED;
 					return FALSE;
 				}
+
+				// Get the section data source and copy the data to the section buffer
 				pSectionDataSource = MakePointer(LPVOID, lpPeModuleBuffer, pImageSectionHeader[i].PointerToRawData);
 				mml_memmove(pDest, pSectionDataSource, pImageSectionHeader[i].SizeOfRawData);
 			}
 
+			// Get next section header
 			pImageSectionHeader[i].Misc.PhysicalAddress = (DWORD)(ULONGLONG)pDest;
 		}
 	}
@@ -323,12 +349,13 @@ BOOL MapMemModuleSections(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer)
 }
 
 /// <summary>
-/// 
+/// Relocates the module.
 /// </summary>
-/// <param name="pMemModule"></param>
-/// <returns></returns>
+/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
+/// <returns>True if successful.</returns>
 BOOL RelocateModuleBase(PMEM_MODULE pMemModule)
 {
+	// Validate the parameters
 	if (NULL == pMemModule  || NULL == pMemModule->pImageDosHeader)
 		return FALSE;
 
@@ -386,10 +413,10 @@ BOOL RelocateModuleBase(PMEM_MODULE pMemModule)
 }
 
 /// <summary>
-/// 
+/// Resolves the import table.
 /// </summary>
-/// <param name="pMemModule"></param>
-/// <returns></returns>
+/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
+/// <returns>True if successful.</returns>
 BOOL ResolveImportTable(PMEM_MODULE pMemModule)
 {
 	if (NULL == pMemModule  || NULL == pMemModule->pNtFuncptrsTable || NULL == pMemModule->pImageDosHeader)
@@ -464,10 +491,10 @@ BOOL ResolveImportTable(PMEM_MODULE pMemModule)
 }
 
 /// <summary>
-/// 
+/// Sets the memory protected stats of all the sections.
 /// </summary>
-/// <param name="pMemModule"></param>
-/// <returns></returns>
+/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
+/// <returns>True if successful.</returns>
 BOOL SetMemProtectStatus(PMEM_MODULE pMemModule)
 {
 	if (NULL == pMemModule || NULL == pMemModule->pNtFuncptrsTable)
@@ -554,10 +581,10 @@ BOOL SetMemProtectStatus(PMEM_MODULE pMemModule)
 }
 
 /// <summary>
-/// 
+/// Executes the TLS callback function.
 /// </summary>
-/// <param name="pMemModule"></param>
-/// <returns></returns>
+/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
+/// <returns>True if successful.</returns>
 BOOL ExecuteTLSCallback(PMEM_MODULE pMemModule)
 {
 	if (NULL == pMemModule || NULL == pMemModule->pImageDosHeader)
@@ -585,11 +612,11 @@ BOOL ExecuteTLSCallback(PMEM_MODULE pMemModule)
 }
 
 /// <summary>
-/// 
+/// Calls the module entry.
 /// </summary>
-/// <param name="pMemModule"></param>
-/// <param name="dwReason"></param>
-/// <returns></returns>
+/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
+/// <param name="dwReason">The reason of the calling.</param>
+/// <returns>True if successful.</returns>
 BOOL CallModuleEntry(PMEM_MODULE pMemModule, DWORD dwReason)
 {
 	if (NULL == pMemModule || NULL == pMemModule->pImageDosHeader)
@@ -617,11 +644,11 @@ BOOL CallModuleEntry(PMEM_MODULE pMemModule, DWORD dwReason)
 }
 
 /// <summary>
-/// 
+/// Gets the exported function address.
 /// </summary>
-/// <param name="pMemModule"></param>
-/// <param name="lpName"></param>
-/// <returns></returns>
+/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
+/// <param name="lpName">The function name.</param>
+/// <returns>The address of the function or null.</returns>
 FARPROC GetExportedProcAddress(PMEM_MODULE pMemModule, LPCSTR lpName)
 {
 	if (NULL == pMemModule || NULL == pMemModule->pImageDosHeader)
@@ -669,10 +696,10 @@ FARPROC GetExportedProcAddress(PMEM_MODULE pMemModule, LPCSTR lpName)
 }
 
 /// <summary>
-/// 
+/// Unmaps all the sections.
 /// </summary>
-/// <param name="pMemModule"></param>
-/// <returns></returns>
+/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
+/// <returns>True if successful.</returns>
 VOID UnmapMemModule(PMEM_MODULE pMemModule)
 {
 	if (NULL == pMemModule
@@ -697,7 +724,9 @@ VOID UnmapMemModule(PMEM_MODULE pMemModule)
 //
 #include "crc.h"
 
-//
+/// <summary>
+/// Mark.
+/// </summary>
 void mmLoaderCodeEnd()
 {
 	return;
