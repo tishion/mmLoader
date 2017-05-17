@@ -48,3 +48,4 @@ Temporary Items
 *.opendb
 *.db
 *.suo
+.vs
