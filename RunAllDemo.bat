@@ -13,5 +13,3 @@ FOR /r .\ %%i in (*.exe) DO (
 	ECHO %%i
 	%%i
 )
-
-PAUSE
