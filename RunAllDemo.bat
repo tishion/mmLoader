@@ -1,7 +1,7 @@
 @ECHO OFF
 @COLOR 1A
 ECHO ========================Run all demo for x86==============================
-@CD .\output\demo\Win32\
+@CD .\output\demo\x86\
 FOR /r .\ %%i IN (*.exe) DO (
 	ECHO %%i
 	%%i
