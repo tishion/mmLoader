@@ -123,7 +123,7 @@ typedef LPVOID(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, L
 /// </returns>
 LPVOID __stdcall
 MemModuleHelper(
-	_Out_ PMEM_MODULE pMmeModule, 
+	_Inout_ PMEM_MODULE pMmeModule, 
 	_In_ MMHELPER_METHOD method, 
 	_In_ LPVOID lpPeModuleBuffer,
 	_In_ LPCSTR lpProcName,
@@ -150,7 +150,7 @@ LoadMemModule(
 /// <returns>The address of the function or null.</returns>
 FARPROC __stdcall
 GetMemModuleProc(
-	_Out_ PMEM_MODULE pMemModule,
+	_In_ PMEM_MODULE pMemModule,
 	_In_ LPCSTR lpName);
 
 /// <summary>
@@ -158,6 +158,6 @@ GetMemModuleProc(
 /// </summary>
 /// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
 VOID __stdcall
-FreeMemModule(_Out_ PMEM_MODULE pMemModule);
+FreeMemModule(_In_ PMEM_MODULE pMemModule);
 
 #endif // __MMLOADER_H_INCLUDED_
