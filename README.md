@@ -1,6 +1,6 @@
 # mmLoader http://tishion.github.io/mmLoader/
 
-Library used for loading dll module bypassing Window PE loader  
+Load dll modules from memory directly bypassing Window PE loader
 
 Last build status:
 
