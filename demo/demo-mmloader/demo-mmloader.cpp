@@ -6,6 +6,87 @@
 #include <strsafe.h>
 #include "..\..\output\include\mmLoader\mmLoader.h"
 
+class AutoReleaseModuleBuffer
+{
+public:
+	AutoReleaseModuleBuffer(LPCTSTR wszDllPath)
+		: m_pBuffer(NULL), m_hFileMapping(NULL), m_hFile(NULL)
+	{
+		// Open the module and read it into memory buffer
+		m_hFile = ::CreateFileW(wszDllPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
+		if (INVALID_HANDLE_VALUE == m_hFile || NULL == m_hFile)
+		{
+			wprintf(L"Failed to open the file: %s\r\n", wszDllPath);
+			return;
+		}
+
+		// Check file size
+		DWORD dwFileSize = ::GetFileSize(m_hFile, NULL);
+		if (INVALID_FILE_SIZE == dwFileSize || dwFileSize < sizeof(IMAGE_DOS_HEADER))
+		{
+			::CloseHandle(m_hFile);
+			m_hFile = NULL;
+			_tprintf(_T("Invalid file size: %d\r\n"), dwFileSize);
+			return;
+		}
+
+		m_hFileMapping = ::CreateFileMappingW(m_hFile, 0, PAGE_READONLY, 0, 0, NULL);
+		if (NULL == m_hFileMapping)
+		{
+			::CloseHandle(m_hFile);
+			m_hFile = NULL;
+			_tprintf(_T("Failed to create file mapping.\r\n"));
+			return;
+		}
+
+		m_pBuffer = ::MapViewOfFile(m_hFileMapping, FILE_MAP_READ, 0, 0, 0);
+		if (NULL == m_pBuffer)
+		{
+			::CloseHandle(m_hFileMapping);
+			::CloseHandle(m_hFile);
+			m_hFileMapping = NULL;
+			m_hFile = NULL;
+			_tprintf(_T("Failed to map view of the file.\r\n"));
+		}
+	}
+
+	~AutoReleaseModuleBuffer()
+	{
+		Release();
+	}
+
+	void Release()
+	{
+		if (m_pBuffer)
+		{
+			::UnmapViewOfFile(m_pBuffer);
+			m_pBuffer = NULL;
+		}
+
+		if (m_hFileMapping)
+		{
+			::CloseHandle(m_hFileMapping);
+			m_hFileMapping = NULL;
+		}
+
+		if (m_hFile)
+		{
+			::CloseHandle(m_hFile);
+			m_hFile = NULL;
+		}
+	}
+
+	operator LPVOID()
+	{
+		return m_pBuffer;
+	}
+
+private:
+	LPVOID m_pBuffer;
+	HANDLE m_hFile;
+	HANDLE m_hFileMapping;
+};
+
 int main()
 {
 	// Return value
@@ -24,54 +105,23 @@ int main()
 	MEM_MODULE sMemModule;
 	sMemModule.pNtFuncptrsTable = &sNtFuncPtrsTable;
 
-	// Load the module
+	// Here we just read the module data from disk file
+	// In your real project you can download the module data from remote without witting it to disk file
 #ifdef _DEBUG
 	WCHAR wszDllPath[] = L"demo-moduled.dll";
 #else
 	WCHAR wszDllPath[] = L"demo-module.dll";
 #endif
+	AutoReleaseModuleBuffer moduleBuffer(wszDllPath);
 
-	// Open the module and read it into memory buffer
-	BOOL br = FALSE;
-	HANDLE hFile = ::CreateFileW(wszDllPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
-	if (INVALID_HANDLE_VALUE == hFile || NULL == hFile)
+	// Load the module from the buffer
+	BOOL bLoaded = (BOOL)MemModuleHelper(&sMemModule, MHM_BOOL_LOAD, moduleBuffer, NULL, TRUE);
+
+	// After the module was loaded we can release the original buffer
+	moduleBuffer.Release();
+
+	if (bLoaded)
 	{
-		wprintf(L"Failed to open the file: %s\r\n", wszDllPath);
-		return iRet;
-	}
-
-	// Check file size
-	DWORD dwFileSize = ::GetFileSize(hFile, NULL);
-	if (INVALID_FILE_SIZE == dwFileSize || dwFileSize < sizeof(IMAGE_DOS_HEADER))
-	{
-		::CloseHandle(hFile);
-		_tprintf(_T("Invalid file size: %d\r\n"), dwFileSize);
-		return iRet;
-	}
-
-	HANDLE hFileMapping = ::CreateFileMappingW(hFile, 0, PAGE_READONLY, 0, 0, NULL);
-	if (NULL == hFileMapping)
-	{
-		::CloseHandle(hFile);
-		_tprintf(_T("Failed to create file mapping.\r\n"));
-		return iRet;
-	}
-
-	LPVOID pBuffer = ::MapViewOfFile(hFileMapping, FILE_MAP_READ, 0, 0, 0);
-	if (NULL == pBuffer)
-	{
-		::CloseHandle(hFileMapping);
-		::CloseHandle(hFile);
-		_tprintf(_T("Failed to map view of the file.\r\n"));
-		return iRet;
-	}
-
-	if (MemModuleHelper(&sMemModule, MHM_BOOL_LOAD, pBuffer, NULL, TRUE))
-	{
-		::UnmapViewOfFile(pBuffer);
-		::CloseHandle(hFileMapping);
-		::CloseHandle(hFile);
-
 		_tprintf(_T("Module was loaded successfully. Module Base: 0x%p!\r\n"), sMemModule.lpBase);
 
 		// Get address of function demoFunction
@@ -81,7 +131,7 @@ int main()
 			_tprintf(_T("Get address of demoFunction successfully. Address: 0x%p!\r\n"), lpAddr);
 
 			// Function pointer type of demoFunction
-			typedef BOOL (_stdcall * Type_TargetFunction)(unsigned char*, unsigned int);
+			typedef BOOL(_stdcall * Type_TargetFunction)(unsigned char*, unsigned int);
 
 			// Call the demoFunction
 			Type_TargetFunction pfnFunction = (Type_TargetFunction)lpAddr;
