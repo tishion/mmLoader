@@ -14,6 +14,6 @@ mmLoader is used for loaing dll module from memory directly. It can bypass the w
 2. Use mmLoader static library
     - Build the projects and collect the static library file, then add reference to it in your projects.
 
-3. Use mmLoader the shell code
+3. Use mmLoader shell code
    - Build project mmLoader-shellcode-generator then run it, collect the generated header file. 
    - Include the header file in your project
