@@ -1,0 +1,23 @@
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- Library name prefix -->
+    <RefLibNamePrefix Condition="%(ClCompile.RuntimeLibrary) == 'MultiThreadedDLL' OR %(ClCompile.RuntimeLibrary) == 'MultiThreadedDebugDLL'">mmLoader-static"</RefLibNamePrefix>
+    <RefLibNamePrefix Condition="%(ClCompile.RuntimeLibrary) == 'MultiThreaded' OR %(ClCompile.RuntimeLibrary) == 'MultiThreadedDebug'">mmLoader-static-mt"</RefLibNamePrefix>
+
+    <!-- Library name -->
+    <RefLibName Condition="'$(Configuration)' == 'Debug'">$(RefLibNamePrefix)-$(PlatformShortName)-$(PlatformToolset)-d.lib</RefLibName>
+    <RefLibName Condition="'$(Configuration)' == 'Release'">$(RefLibNamePrefix)-$(PlatformShortName)-$(PlatformToolset).lib</RefLibName>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <!-- Header files folder -->
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    
+    <!-- Import librrary -->
+    <Link>
+      <AdditionalDependencies>$(MSBuildThisFileDirectory)..\..\lib\native\$(RefLibName);%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

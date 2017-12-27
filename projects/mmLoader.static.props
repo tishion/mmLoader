@@ -3,8 +3,9 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <OutDir>$(SolutionDir)output\lib\$(PlatformShortName)\</OutDir>
+    <OutDir>$(SolutionDir)output\lib\</OutDir>
     <IntDir>$(SolutionDir)temp\$(PlatformShortName)\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)-$(PlatformShortName)-$(PlatformToolset)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <PostBuildEvent>

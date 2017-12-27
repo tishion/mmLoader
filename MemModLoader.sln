@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.14
+VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mmLoader", "projects\mmLoader.vcxitems", "{45D41ACC-2C3C-43D2-BC10-02AA73FFC7C7}"
 EndProject
@@ -24,6 +24,21 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "demo-mmloader-shellcode", "demo\demo-mmloader-shellcode\demo-mmloader-shellcode.vcxproj", "{F68224B7-3965-405F-96CF-3C894DB54B2E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "demo-module", "demo\demo-module\demo-module.vcxproj", "{D51BC152-624C-4290-8272-DB5D12A171CF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "misc", "misc", "{F2F6A043-1CF1-469D-8C03-3233707A95F9}"
+	ProjectSection(SolutionItems) = preProject
+		RunAllDemo.bat = RunAllDemo.bat
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuget", "nuget", "{3B16DDC2-57DE-4BF9-B6D0-69B4D0DBB52D}"
+	ProjectSection(SolutionItems) = preProject
+		nuget\mmLoader.static.v141_xp.nuspec = nuget\mmLoader.static.v141_xp.nuspec
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "targets", "targets", "{B679825E-377E-4517-976E-23B9C934BA6A}"
+	ProjectSection(SolutionItems) = preProject
+		nuget\targets\mmLoader.static.v141_xp.targets = nuget\targets\mmLoader.static.v141_xp.targets
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -108,5 +123,9 @@ Global
 		{F77E5305-41B1-4A6B-BEA2-981953C2C129} = {DBC11CD3-55A6-4F17-B581-AC1C9EAC7F4D}
 		{F68224B7-3965-405F-96CF-3C894DB54B2E} = {29EC8A1C-FD3B-4113-807C-1EE4EB0A366A}
 		{D51BC152-624C-4290-8272-DB5D12A171CF} = {29EC8A1C-FD3B-4113-807C-1EE4EB0A366A}
+		{B679825E-377E-4517-976E-23B9C934BA6A} = {3B16DDC2-57DE-4BF9-B6D0-69B4D0DBB52D}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {904F9740-926D-41BF-9ED0-57C9FFC321AC}
 	EndGlobalSection
 EndGlobal
