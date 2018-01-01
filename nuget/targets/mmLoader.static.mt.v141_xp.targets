@@ -13,7 +13,7 @@
 
     <Link>
       <!--Add additional dependencies-->
-      <AdditionalDependencies>$(MSBuildThisFileDirectory)..\..\lib\native\mmLoader-static-$(RefLibNameSuffix);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildThisFileDirectory)..\..\lib\native\mmLoader-static-mt-$(RefLibNameSuffix);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 </Project>

@@ -32,11 +32,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "misc", "misc", "{F2F6A043-1
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuget", "nuget", "{3B16DDC2-57DE-4BF9-B6D0-69B4D0DBB52D}"
 	ProjectSection(SolutionItems) = preProject
+		nuget\mmLoader.static.mt.v141_xp.nuspec = nuget\mmLoader.static.mt.v141_xp.nuspec
 		nuget\mmLoader.static.v141_xp.nuspec = nuget\mmLoader.static.v141_xp.nuspec
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "targets", "targets", "{B679825E-377E-4517-976E-23B9C934BA6A}"
 	ProjectSection(SolutionItems) = preProject
+		nuget\targets\mmLoader.static.mt.v141_xp.targets = nuget\targets\mmLoader.static.mt.v141_xp.targets
 		nuget\targets\mmLoader.static.v141_xp.targets = nuget\targets\mmLoader.static.v141_xp.targets
 	EndProjectSection
 EndProject

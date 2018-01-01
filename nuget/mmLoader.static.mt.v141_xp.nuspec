@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata>
     <!-- The identifier that must be unique within the hosting gallery -->
-    <id>mmLoader.static.v141_xp</id>
+    <id>mmLoader.static.mt.v141_xp</id>
 
     <!-- The package version number that is used when resolving dependencies -->
     <version>0.0.0.0</version>
@@ -49,10 +49,10 @@
   <!-- Contents -->
   <files>
     <file src="..\output\include\**\*" target="build\native\include\" />
-    <file src="targets\mmLoader.static.v141_xp.targets" target="build\native\"/>
-    <file src="..\output\lib\mmLoader-static-x64-v141_xp.lib" target="lib\native\" />
-    <file src="..\output\lib\mmLoader-static-x86-v141_xp.lib" target="lib\native\" />
-    <file src="..\output\lib\mmLoader-static-x64-v141_xp-d.lib" target="lib\native\" />
-    <file src="..\output\lib\mmLoader-static-x86-v141_xp-d.lib" target="lib\native\" />
+    <file src="targets\mmLoader.static.mt.v141_xp.targets" target="build\native\"/>
+    <file src="..\output\lib\mmLoader-static-mt-x64-v141_xp.lib" target="lib\native\" />
+    <file src="..\output\lib\mmLoader-static-mt-x86-v141_xp.lib" target="lib\native\" />
+    <file src="..\output\lib\mmLoader-static-mt-x64-v141_xp-d.lib" target="lib\native\" />
+    <file src="..\output\lib\mmLoader-static-mt-x86-v141_xp-d.lib" target="lib\native\" />
   </files>
 </package>
