@@ -3,6 +3,7 @@
   <Target Name="BuildMultiplePlatforms">
     <ItemGroup>
       <Configurations Include="Release"/>
+	  <Configurations Include="Debug"/>
       <Platforms Include="x86;x64"/>
       <ConfigAndPlatform Include="@(Configurations)">
         <Platform>%(Platforms.Identity)</Platform>
