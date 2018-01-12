@@ -19,17 +19,17 @@
 /// </summary>
 typedef struct __NTFUNCPTRS
 {
-	LPVOID pfnGetModuleHandleA;			// GetModuleHandleA
-	LPVOID pfnLoadLibraryA;				// LoadLibraryA
-	LPVOID pfnGetProcAddress;			// GetProcAddress
-	LPVOID pfnVirtualAlloc;				// VirtualAlloc
-	LPVOID pfnVirtualFree;				// VirtualFree
-	LPVOID pfnVirtualProtect;			// VirtualProtect
-	LPVOID pfnReversed_0;
-	LPVOID pfnReversed_1;
-	LPVOID pfnReversed_2;
-	LPVOID pfnReversed_3;
-	LPVOID pfnReversed_4;
+    LPVOID pfnGetModuleHandleA;			// GetModuleHandleA
+    LPVOID pfnLoadLibraryA;				// LoadLibraryA
+    LPVOID pfnGetProcAddress;			// GetProcAddress
+    LPVOID pfnVirtualAlloc;				// VirtualAlloc
+    LPVOID pfnVirtualFree;				// VirtualFree
+    LPVOID pfnVirtualProtect;			// VirtualProtect
+    LPVOID pfnReversed_0;
+    LPVOID pfnReversed_1;
+    LPVOID pfnReversed_2;
+    LPVOID pfnReversed_3;
+    LPVOID pfnReversed_4;
 } NTFUNCPTRSTABLE, *PNTFUNCPTRSTABLE;
 
 /// <summary>
@@ -37,40 +37,40 @@ typedef struct __NTFUNCPTRS
 /// </summary>
 typedef struct __MEMMODULE
 {
-	union								// MemModule base
-	{
+    union								// MemModule base
+    {
 #if _WIN64
-		ULONGLONG	iBase;
+        ULONGLONG	iBase;
 #else
-		DWORD		iBase;
+        DWORD		iBase;
 #endif
-		HMODULE		hModule;
-		LPVOID		lpBase;
-		PIMAGE_DOS_HEADER pImageDosHeader;
-	};
+        HMODULE		hModule;
+        LPVOID		lpBase;
+        PIMAGE_DOS_HEADER pImageDosHeader;
+    };
 
-	DWORD dwSizeOfImage;				// MemModule size
-	DWORD dwCrc;						// MemModule crc32
-	DWORD dwPageSize;					// SystemPageSize
-	BOOL  bLoadOk;						// MemModule is loaded ok?
+    DWORD dwSizeOfImage;				// MemModule size
+    DWORD dwCrc;						// MemModule crc32
+    DWORD dwPageSize;					// SystemPageSize
+    BOOL  bLoadOk;						// MemModule is loaded ok?
 
-	PNTFUNCPTRSTABLE pNtFuncptrsTable;	// Pointer to NT function pointers table 
+    PNTFUNCPTRSTABLE pNtFuncptrsTable;	// Pointer to NT function pointers table 
 
-	DWORD  dwErrorCode;					// Last error code
+    DWORD  dwErrorCode;					// Last error code
 
-	__MEMMODULE()
-	{
-		iBase = 0;
-		dwSizeOfImage = 0;
-		dwCrc = 0;
-		bLoadOk = 0;
-		pNtFuncptrsTable = 0;
-		dwErrorCode = 0;
-		
-		SYSTEM_INFO sysInfo;
-		::GetNativeSystemInfo(&sysInfo);
-		dwPageSize = sysInfo.dwPageSize;
-	}
+    __MEMMODULE()
+    {
+        iBase = 0;
+        dwSizeOfImage = 0;
+        dwCrc = 0;
+        bLoadOk = 0;
+        pNtFuncptrsTable = 0;
+        dwErrorCode = 0;
+        
+        SYSTEM_INFO sysInfo;
+        ::GetNativeSystemInfo(&sysInfo);
+        dwPageSize = sysInfo.dwPageSize;
+    }
 } MEM_MODULE, *PMEM_MODULE;
 
 /// <summary>
@@ -78,9 +78,9 @@ typedef struct __MEMMODULE
 /// </summary>
 typedef enum _MMHELPER_METHOD
 {
-	MHM_BOOL_LOAD,						// Call LoadMemModule
-	MHM_VOID_FREE,						// Call FreeMemModule
-	MHM_FARPROC_GETPROC,				// Call GetMemModuleProc
+    MHM_BOOL_LOAD,						// Call LoadMemModule
+    MHM_VOID_FREE,						// Call FreeMemModule
+    MHM_FARPROC_GETPROC,				// Call GetMemModuleProc
 } MMHELPER_METHOD;
 
 /// <summary>
@@ -123,11 +123,11 @@ typedef LPVOID(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, L
 /// </returns>
 LPVOID __stdcall
 MemModuleHelper(
-	_Inout_ PMEM_MODULE pMmeModule, 
-	_In_ MMHELPER_METHOD method, 
-	_In_ LPVOID lpPeModuleBuffer,
-	_In_ LPCSTR lpProcName,
-	_In_ BOOL bCallEntry);
+    _Inout_ PMEM_MODULE pMmeModule, 
+    _In_ MMHELPER_METHOD method, 
+    _In_ LPVOID lpPeModuleBuffer,
+    _In_ LPCSTR lpProcName,
+    _In_ BOOL bCallEntry);
 
 /// <summary>
 /// Loads the memory module.
@@ -138,9 +138,9 @@ MemModuleHelper(
 /// <returns>True if the module is loaded successfully.</returns>
 BOOL __stdcall
 LoadMemModule(
-	_Out_ PMEM_MODULE pMemModule,
-	_In_ LPVOID lpPeModuleBuffer, 
-	_In_ BOOL bCallEntry);
+    _Out_ PMEM_MODULE pMemModule,
+    _In_ LPVOID lpPeModuleBuffer, 
+    _In_ BOOL bCallEntry);
 
 /// <summary>
 /// Gets the process address of the specific function in the memory module.
@@ -150,8 +150,8 @@ LoadMemModule(
 /// <returns>The address of the function or null.</returns>
 FARPROC __stdcall
 GetMemModuleProc(
-	_In_ PMEM_MODULE pMemModule,
-	_In_ LPCSTR lpName);
+    _In_ PMEM_MODULE pMemModule,
+    _In_ LPCSTR lpName);
 
 /// <summary>
 /// Frees the memory module.

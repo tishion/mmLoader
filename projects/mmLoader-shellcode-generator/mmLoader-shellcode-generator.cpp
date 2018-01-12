@@ -153,9 +153,9 @@ LPSTR tail =
 /// </summary>
 void InitializeConsole()
 {
-	// Create a console
-	if (!::AllocConsole())
-		::MessageBox(NULL, _T("Failed to allocate console."), _T("Warning"), MB_OK);
+    // Create a console
+    if (!::AllocConsole())
+        ::MessageBox(NULL, _T("Failed to allocate console."), _T("Warning"), MB_OK);
 }
 
 /// <summary>
@@ -164,13 +164,13 @@ void InitializeConsole()
 /// <param name="message"></param>
 void ConsoleWrite(LPCSTR message)
 {
-	if (!message)
-		return;
+    if (!message)
+        return;
 
-	DWORD bytesWritten = 0;
-	HANDLE h = ::GetStdHandle(STD_OUTPUT_HANDLE);
-	if (!h || !::WriteConsoleA(h, message, lstrlenA(message), &bytesWritten, NULL))
-		::MessageBoxA(NULL, message, "Warning", MB_OK);
+    DWORD bytesWritten = 0;
+    HANDLE h = ::GetStdHandle(STD_OUTPUT_HANDLE);
+    if (!h || !::WriteConsoleA(h, message, lstrlenA(message), &bytesWritten, NULL))
+        ::MessageBoxA(NULL, message, "Warning", MB_OK);
 }
 
 /// 
@@ -178,13 +178,13 @@ void ConsoleWrite(LPCSTR message)
 /// <param name="message"></param>
 void ConsoleWriteW(LPCWSTR message)
 {
-	if (!message)
-		return;
+    if (!message)
+        return;
 
-	DWORD bytesWritten = 0;
-	HANDLE h = ::GetStdHandle(STD_OUTPUT_HANDLE);
-	if (!h || !::WriteConsoleW(h, message, lstrlenW(message), &bytesWritten, NULL))
-		::MessageBoxW(NULL, message, L"Warning", MB_OK);
+    DWORD bytesWritten = 0;
+    HANDLE h = ::GetStdHandle(STD_OUTPUT_HANDLE);
+    if (!h || !::WriteConsoleW(h, message, lstrlenW(message), &bytesWritten, NULL))
+        ::MessageBoxW(NULL, message, L"Warning", MB_OK);
 }
 
 #ifdef _WIN64
@@ -222,124 +222,124 @@ extern void mmLoaderCodeEnd();
 /// <returns></returns>
 int CodeBag()
 {
-	// Initialize the console
-	InitializeConsole();
+    // Initialize the console
+    InitializeConsole();
 
-	LPCWSTR pFolderPath = SHELLCODE_HEADER_FILE_NAME;
-	WCHAR pathBuffer[MAX_PATH];
-	for (int i = 0; i < MAX_PATH; i++) pathBuffer[i] = 0;
+    LPCWSTR pFolderPath = SHELLCODE_HEADER_FILE_NAME;
+    WCHAR pathBuffer[MAX_PATH];
+    for (int i = 0; i < MAX_PATH; i++) pathBuffer[i] = 0;
 
-	// Get command line
-	LPCWSTR pCmd = ::GetCommandLineW();
+    // Get command line
+    LPCWSTR pCmd = ::GetCommandLineW();
 
-	// Parse command line
-	int nCount = 0;
-	LPWSTR* pArgs = NULL;
-	if (pCmd)
-		pArgs = ::CommandLineToArgvW(pCmd, &nCount);
-	if (nCount >= 2)
-	{
-		if (::GetFullPathNameW(pArgs[1], MAX_PATH, pathBuffer, NULL) <= 0)
-		{
-			ConsoleWrite("Failed to get the full path of the folder: ");
-			ConsoleWriteW(pArgs[2]);
-			ConsoleWrite("\r\n");
-			return -1;
-		}
+    // Parse command line
+    int nCount = 0;
+    LPWSTR* pArgs = NULL;
+    if (pCmd)
+        pArgs = ::CommandLineToArgvW(pCmd, &nCount);
+    if (nCount >= 2)
+    {
+        if (::GetFullPathNameW(pArgs[1], MAX_PATH, pathBuffer, NULL) <= 0)
+        {
+            ConsoleWrite("Failed to get the full path of the folder: ");
+            ConsoleWriteW(pArgs[2]);
+            ConsoleWrite("\r\n");
+            return -1;
+        }
 
-		if (!::PathFileExistsW(pathBuffer))
-		{
-			ConsoleWrite("Path does not exist: ");
-			ConsoleWriteW(pathBuffer);
-			ConsoleWrite("\r\n");
-			return -1;
-		}
+        if (!::PathFileExistsW(pathBuffer))
+        {
+            ConsoleWrite("Path does not exist: ");
+            ConsoleWriteW(pathBuffer);
+            ConsoleWrite("\r\n");
+            return -1;
+        }
 
-		if (::PathCombineW(pathBuffer, pathBuffer, SHELLCODE_HEADER_FILE_NAME) <= 0)
-		{
-			ConsoleWrite("Failed to build file path.\r\n");
-			return -1;
-		}
+        if (::PathCombineW(pathBuffer, pathBuffer, SHELLCODE_HEADER_FILE_NAME) <= 0)
+        {
+            ConsoleWrite("Failed to build file path.\r\n");
+            return -1;
+        }
 
-		pFolderPath = pathBuffer;
-	}
+        pFolderPath = pathBuffer;
+    }
 
-	// Get code start and end address
-	unsigned char* pStart = (unsigned char*)&MemModuleHelper;
-	unsigned char* pEnd = (unsigned char*)&mmLoaderCodeEnd;
+    // Get code start and end address
+    unsigned char* pStart = (unsigned char*)&MemModuleHelper;
+    unsigned char* pEnd = (unsigned char*)&mmLoaderCodeEnd;
 
-	// Get code length
-	ULONGLONG codeLength = (pEnd - pStart);
+    // Get code length
+    ULONGLONG codeLength = (pEnd - pStart);
 
-	// Get the buffer length
-	size_t textLength = 512 * 1024;
+    // Get the buffer length
+    size_t textLength = 512 * 1024;
 
-	// Allocate the heap buffer for the file content
-	ConsoleWrite("Allocating buffer..\r\n");
-	LPSTR pBuffer = (LPSTR)::HeapAlloc(::GetProcessHeap(), HEAP_ZERO_MEMORY, textLength);
-	if (!pBuffer)
-	{
-		ConsoleWrite("Failed to allocate memory buffer.\r\n");
-		return -1;
-	}
+    // Allocate the heap buffer for the file content
+    ConsoleWrite("Allocating buffer..\r\n");
+    LPSTR pBuffer = (LPSTR)::HeapAlloc(::GetProcessHeap(), HEAP_ZERO_MEMORY, textLength);
+    if (!pBuffer)
+    {
+        ConsoleWrite("Failed to allocate memory buffer.\r\n");
+        return -1;
+    }
 
-	// Start to build the file content
-	ConsoleWrite("Building the file content..\r\n");\
-	::StringCchCatA(pBuffer, textLength, head);
-	unsigned char charTable[] = { "0123456789ABCDEF" };
-	unsigned char buf[3] = { 0, 0, 0 };
-	int n = 0;
-	for (unsigned char* p = pStart; p < pEnd; p++)
-	{
-		// Start one row
-		if (0 == n++) ::StringCchCatA(pBuffer, textLength, "\t");
-		{
-			// Hex to string
-			::StringCchCatA(pBuffer, textLength, "0x");
-			buf[0] = charTable[*p >> 4];
-			buf[1] = charTable[*p & 0x0f];
-			::StringCchCatA(pBuffer, textLength, (char*)buf);
-			::StringCchCatA(pBuffer, textLength, ", ");
-		}
-		// End one row
-		if (n == 16 && !(n = 0)) ::StringCchCatA(pBuffer, textLength, "\r\n");
-	}
-	::StringCchCatA(pBuffer, textLength, tail);
+    // Start to build the file content
+    ConsoleWrite("Building the file content..\r\n");\
+    ::StringCchCatA(pBuffer, textLength, head);
+    unsigned char charTable[] = { "0123456789ABCDEF" };
+    unsigned char buf[3] = { 0, 0, 0 };
+    int n = 0;
+    for (unsigned char* p = pStart; p < pEnd; p++)
+    {
+        // Start one row
+        if (0 == n++) ::StringCchCatA(pBuffer, textLength, "\t");
+        {
+            // Hex to string
+            ::StringCchCatA(pBuffer, textLength, "0x");
+            buf[0] = charTable[*p >> 4];
+            buf[1] = charTable[*p & 0x0f];
+            ::StringCchCatA(pBuffer, textLength, (char*)buf);
+            ::StringCchCatA(pBuffer, textLength, ", ");
+        }
+        // End one row
+        if (n == 16 && !(n = 0)) ::StringCchCatA(pBuffer, textLength, "\r\n");
+    }
+    ::StringCchCatA(pBuffer, textLength, tail);
 
-	ConsoleWrite("File content build done:\r\n\r\n");
-	ConsoleWrite(pBuffer);
+    ConsoleWrite("File content build done:\r\n\r\n");
+    ConsoleWrite(pBuffer);
 
-	// Get the valid string length
-	::StringCchLengthA(pBuffer, textLength, &textLength);
+    // Get the valid string length
+    ::StringCchLengthA(pBuffer, textLength, &textLength);
 
-	ConsoleWrite("Create file mmLoaderShellCode.h\r\n");
-	// Create file to save the content
-	HANDLE h = 	::CreateFileW(pFolderPath, FILE_WRITE_ACCESS, FILE_SHARE_READ, NULL, CREATE_ALWAYS, NULL, NULL);
-	DWORD dwBytesWritten = 0;
-	if (INVALID_HANDLE_VALUE == h || NULL == h)
-	{
-		ConsoleWrite("Failed to create file \"mmLoaderShellCode\".\r\n");
-		return -1;
-	}
-	else
-	{
-		// Write the string content to the disk file
-		if (!::WriteFile(h, pBuffer, (DWORD)textLength, &dwBytesWritten, NULL))
-		{
-			ConsoleWrite("Failed to write content to file \"mmLoaderShellCode\".\r\n");
-			return -1;
-		}
+    ConsoleWrite("Create file mmLoaderShellCode.h\r\n");
+    // Create file to save the content
+    HANDLE h = 	::CreateFileW(pFolderPath, FILE_WRITE_ACCESS, FILE_SHARE_READ, NULL, CREATE_ALWAYS, NULL, NULL);
+    DWORD dwBytesWritten = 0;
+    if (INVALID_HANDLE_VALUE == h || NULL == h)
+    {
+        ConsoleWrite("Failed to create file \"mmLoaderShellCode\".\r\n");
+        return -1;
+    }
+    else
+    {
+        // Write the string content to the disk file
+        if (!::WriteFile(h, pBuffer, (DWORD)textLength, &dwBytesWritten, NULL))
+        {
+            ConsoleWrite("Failed to write content to file \"mmLoaderShellCode\".\r\n");
+            return -1;
+        }
 
-		::FlushFileBuffers(h);
-		::CloseHandle(h);
-	}
+        ::FlushFileBuffers(h);
+        ::CloseHandle(h);
+    }
 
-	// Free the content buffer
-	::HeapFree(::GetProcessHeap(), NULL, pBuffer);
+    // Free the content buffer
+    ::HeapFree(::GetProcessHeap(), NULL, pBuffer);
 
-	// Wait for the return key
-	ConsoleWrite("\r\nShell code generated done.\r\n");
-	//::WaitForSingleObject(::GetCurrentProcess(), INFINITE);
+    // Wait for the return key
+    ConsoleWrite("\r\nShell code generated done.\r\n");
+    //::WaitForSingleObject(::GetCurrentProcess(), INFINITE);
 
-	::ExitProcess(0);
+    ::ExitProcess(0);
 }

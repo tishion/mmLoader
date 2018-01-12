@@ -8,9 +8,9 @@
 /// <param name="psz">The string.</param>
 int mml_strlenA(const char* psz)
 {
-	int i = 0;
-	for (; *psz; psz++, i++);
-	return i;
+    int i = 0;
+    for (; *psz; psz++, i++);
+    return i;
 }
 
 /// <summary>
@@ -20,17 +20,17 @@ int mml_strlenA(const char* psz)
 /// <param name="pszb">The second string.</param>
 int mml_strcmpA(const char* psza, const char* pszb)
 {
-	unsigned char c1 = 0;
-	unsigned char c2 = 0;
+    unsigned char c1 = 0;
+    unsigned char c2 = 0;
 
-	do
-	{
-		c1 = (unsigned char)*psza++;
-		c2 = (unsigned char)*pszb++;
-		if (c1 == 0) return c1 - c2;
-	} while (c1 == c2);
+    do
+    {
+        c1 = (unsigned char)*psza++;
+        c2 = (unsigned char)*pszb++;
+        if (c1 == 0) return c1 - c2;
+    } while (c1 == c2);
 
-	return c1 - c2;
+    return c1 - c2;
 }
 
 /// <summary>
@@ -41,12 +41,12 @@ int mml_strcmpA(const char* psza, const char* pszb)
 /// <param name="nMax">Maximum count of the character to copy.</param>
 wchar_t* mml_strcpyW(wchar_t* pszDest, const wchar_t* pszSrc, unsigned int nMax)
 {
-	while (nMax--)
-	{
-		*pszDest++ = *pszSrc++;
-		if (*pszSrc == 0) break;
-	}
-	return pszDest;
+    while (nMax--)
+    {
+        *pszDest++ = *pszSrc++;
+        if (*pszSrc == 0) break;
+    }
+    return pszDest;
 }
 
 #pragma optimize( "gtpy", off )
@@ -55,8 +55,8 @@ wchar_t* mml_strcpyW(wchar_t* pszDest, const wchar_t* pszSrc, unsigned int nMax)
 /// </summary>
 void* mml_memset(void* pv, int c, unsigned int cb)
 {
-	for (unsigned int i = 0; i < cb; i++) ((unsigned char*)pv)[i] = (unsigned char)c;
-	return pv;
+    for (unsigned int i = 0; i < cb; i++) ((unsigned char*)pv)[i] = (unsigned char)c;
+    return pv;
 }
 #pragma optimize( "gtpy", on ) 
 
@@ -68,22 +68,22 @@ void* mml_memset(void* pv, int c, unsigned int cb)
 /// <param name="cb">The count of the bytes to move.</param>
 void* mml_memmove(void* pvDest, const void* pvSrc, unsigned int cb)
 {
-	unsigned char* pb1 = 0;
-	unsigned char* pb2 = 0;
+    unsigned char* pb1 = 0;
+    unsigned char* pb2 = 0;
 
-	if (pvSrc < pvDest)
-	{
-		pb1 = (unsigned char*)pvDest + cb - 1;
-		pb2 = (unsigned char*)pvSrc + cb - 1;
-		for (; cb; cb--) *pb1-- = *pb2--;
-	}
-	else if (pvSrc > pvDest)
-	{
-		pb1 = (unsigned char*)pvDest;
-		pb2 = (unsigned char*)pvSrc;
-		for (; cb; cb--) *pb1++ = *pb2++;
-	}
-	return pvDest;
+    if (pvSrc < pvDest)
+    {
+        pb1 = (unsigned char*)pvDest + cb - 1;
+        pb2 = (unsigned char*)pvSrc + cb - 1;
+        for (; cb; cb--) *pb1-- = *pb2--;
+    }
+    else if (pvSrc > pvDest)
+    {
+        pb1 = (unsigned char*)pvDest;
+        pb2 = (unsigned char*)pvSrc;
+        for (; cb; cb--) *pb1++ = *pb2++;
+    }
+    return pvDest;
 }
 
 #endif // __STRMEM_H__
