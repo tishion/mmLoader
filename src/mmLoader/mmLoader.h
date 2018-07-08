@@ -6,25 +6,25 @@
 /// <summary>
 /// Error codes.
 /// </summary>
-#define MMEC_OK							0
-#define MMEC_BAD_PE_FORMAT				1
-#define MMEC_ALLOCATED_MEMORY_FAILED	2
-#define MMEC_INVALID_RELOCATION_BASE	3
-#define MMEC_IMPORT_MODULE_FAILED		4
-#define MMEC_PROTECT_SECTION_FAILED		5
-#define MMEC_INVALID_ENTRY_POINT		6
+#define MMEC_OK                         0
+#define MMEC_BAD_PE_FORMAT              1
+#define MMEC_ALLOCATED_MEMORY_FAILED    2
+#define MMEC_INVALID_RELOCATION_BASE    3
+#define MMEC_IMPORT_MODULE_FAILED       4
+#define MMEC_PROTECT_SECTION_FAILED     5
+#define MMEC_INVALID_ENTRY_POINT        6
 
 /// <summary>
 /// Function table. These function will be used in the mmLoader.
 /// </summary>
 typedef struct __NTFUNCPTRS
 {
-    LPVOID pfnGetModuleHandleA;			// GetModuleHandleA
-    LPVOID pfnLoadLibraryA;				// LoadLibraryA
-    LPVOID pfnGetProcAddress;			// GetProcAddress
-    LPVOID pfnVirtualAlloc;				// VirtualAlloc
-    LPVOID pfnVirtualFree;				// VirtualFree
-    LPVOID pfnVirtualProtect;			// VirtualProtect
+    LPVOID pfnGetModuleHandleA;         // GetModuleHandleA
+    LPVOID pfnLoadLibraryA;             // LoadLibraryA
+    LPVOID pfnGetProcAddress;           // GetProcAddress
+    LPVOID pfnVirtualAlloc;             // VirtualAlloc
+    LPVOID pfnVirtualFree;              // VirtualFree
+    LPVOID pfnVirtualProtect;           // VirtualProtect
     LPVOID pfnReversed_0;
     LPVOID pfnReversed_1;
     LPVOID pfnReversed_2;
@@ -37,26 +37,26 @@ typedef struct __NTFUNCPTRS
 /// </summary>
 typedef struct __MEMMODULE
 {
-    union								// MemModule base
+    union                                // MemModule base
     {
 #if _WIN64
-        ULONGLONG	iBase;
+        ULONGLONG    iBase;
 #else
-        DWORD		iBase;
+        DWORD        iBase;
 #endif
-        HMODULE		hModule;
-        LPVOID		lpBase;
+        HMODULE        hModule;
+        LPVOID        lpBase;
         PIMAGE_DOS_HEADER pImageDosHeader;
     };
 
-    DWORD dwSizeOfImage;				// MemModule size
-    DWORD dwCrc;						// MemModule crc32
-    DWORD dwPageSize;					// SystemPageSize
-    BOOL  bLoadOk;						// MemModule is loaded ok?
+    DWORD dwSizeOfImage;                // MemModule size
+    DWORD dwCrc;                        // MemModule crc32
+    DWORD dwPageSize;                   // SystemPageSize
+    BOOL  bLoadOk;                      // MemModule is loaded ok?
 
-    PNTFUNCPTRSTABLE pNtFuncptrsTable;	// Pointer to NT function pointers table 
+    PNTFUNCPTRSTABLE pNtFuncptrsTable;  // Pointer to NT function pointers table 
 
-    DWORD  dwErrorCode;					// Last error code
+    DWORD  dwErrorCode;                 // Last error code
 
     __MEMMODULE()
     {
@@ -78,9 +78,9 @@ typedef struct __MEMMODULE
 /// </summary>
 typedef enum _MMHELPER_METHOD
 {
-    MHM_BOOL_LOAD,						// Call LoadMemModule
-    MHM_VOID_FREE,						// Call FreeMemModule
-    MHM_FARPROC_GETPROC,				// Call GetMemModuleProc
+    MHM_BOOL_LOAD,                      // Call LoadMemModule
+    MHM_VOID_FREE,                      // Call FreeMemModule
+    MHM_FARPROC_GETPROC,                // Call GetMemModuleProc
 } MMHELPER_METHOD;
 
 /// <summary>
@@ -93,13 +93,13 @@ typedef enum _MMHELPER_METHOD
 /// <returns>True if the module is loaded successfully.</returns>
 /// <returns>
 /// If method is MHM_BOOL_LOAD:
-///		The return value type is BOOL.
+///     The return value type is BOOL.
 ///
 /// If method is MHM_FARPROC_GETPROC
-///		The return value type if FARPROC.
+///     The return value type if FARPROC.
 ///
 /// If method is MHM_VOID_FREE
-///		There is no return value.
+///        There is no return value.
 /// </returns>
 typedef LPVOID(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, LPVOID, LPCSTR, BOOL);
 
@@ -113,13 +113,13 @@ typedef LPVOID(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, L
 /// <returns>True if the module is loaded successfully.</returns>
 /// <returns>
 /// If method is MHM_BOOL_LOAD:
-///		The return value type is BOOL.
+///     The return value type is BOOL.
 ///
 /// If method is MHM_FARPROC_GETPROC
-///		The return value type if FARPROC.
+///     The return value type if FARPROC.
 ///
 /// If method is MHM_VOID_FREE
-///		There is no return value.
+///     There is no return value.
 /// </returns>
 LPVOID __stdcall
 MemModuleHelper(
