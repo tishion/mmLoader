@@ -13,7 +13,7 @@ Nuget native package:
 mmLoader is used for loaing dll module from memory directly. It can bypass the windows system PE loader and load module into process  address sapce. Also it will process all the import tables and reloaction table.
 
 1. Use mmLoader source code:
-   - Just include the source files inyo your projects.
+   - Just include the source files into your projects.
 
 2. Use mmLoader static library
     - Build the projects and collect the static library file, then add reference to it in your projects.
