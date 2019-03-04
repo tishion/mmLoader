@@ -8,36 +8,85 @@ Include all the files in src/mmLoader folder into your proejects. Or you can bui
 
 In these two ways you can use the mmLoader APIs:
 ```cpp
+#ifndef __MMLOADER_H_INCLUDED_
+#define __MMLOADER_H_INCLUDED_
+#pragma once
+#include <windows.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/// <summary>
+/// Error codes.
+/// </summary>
+#define MMEC_OK 0
+#define MMEC_BAD_PE_FORMAT 1
+#define MMEC_ALLOCATED_MEMORY_FAILED 2
+#define MMEC_INVALID_RELOCATION_BASE 3
+#define MMEC_IMPORT_MODULE_FAILED 4
+#define MMEC_PROTECT_SECTION_FAILED 5
+#define MMEC_INVALID_ENTRY_POINT 6
+#define MMEC_INVALID_WIN32_ENV 0xff
+
+/// <summary>
+/// Enums for MemModuleHelper.
+/// </summary>
+typedef enum _MMHELPER_METHOD {
+  MHM_BOOL_LOAD,       // Call LoadMemModule
+  MHM_VOID_FREE,       // Call FreeMemModule
+  MHM_FARPROC_GETPROC, // Call GetMemModuleProc
+} MMHELPER_METHOD;
+
+typedef void **HMEMMODULE;
+
+/// <summary>
+/// Helper function for using shell code.
+/// </summary>
+typedef LPVOID(__stdcall *Type_MemModuleHelper)(MMHELPER_METHOD, LPVOID, LPVOID, LPVOID);
+
+/// <summary>
+/// Helper function for using shell code.
+/// </summary>
+/// <remarks>
+/// If the method == MHM_BOOL_LOAD, then the function performs the LoadMemModule function.
+/// If the method == MHM_VOID_FREE, then the function performs the FreeMemModule function.
+/// If the method == MHM_FARPROC_GETPROC, then the function performs the GetMemModuleProc function.
+/// </remarks>
+LPVOID
+MemModuleHelper(_In_ MMHELPER_METHOD method, _In_ LPVOID lpArg1, _In_ LPVOID lpArg2, _In_ LPVOID lpArg3);
+
 /// <summary>
 /// Loads the memory module.
 /// </summary>
-/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
 /// <param name="lpPeModuleBuffer">The buffer containing the raw data of the module.</param>
 /// <param name="bCallEntry">Call the module entry if true.</param>
-/// <returns>True if the module is loaded successfully.</returns>
-BOOL __stdcall
-LoadMemModule(
-	_Out_ PMEM_MODULE pMemModule,
-	_In_ LPVOID lpPeModuleBuffer, 
-	_In_ BOOL bCallEntry);
+/// <param name="pdwError">The error code.</param>
+/// <returns>The handle to the memory module instance or NULL.</returns>
+HMEMMODULE
+LoadMemModule(_In_ LPVOID lpPeModuleBuffer, _In_ BOOL bCallEntry, _Inout_ DWORD *pdwError);
 
 /// <summary>
 /// Gets the process address of the specific function in the memory module.
 /// </summary>
-/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
+/// <param name="MemModuleHandle">The handle to the memory module instance.</param>
 /// <param name="lpName">The function name.</param>
 /// <returns>The address of the function or null.</returns>
-FARPROC __stdcall
-GetMemModuleProc(
-	_Out_ PMEM_MODULE pMemModule,
-	_In_ LPCSTR lpName);
+FARPROC
+GetMemModuleProc(_In_ HMEMMODULE MemModuleHandle, _In_ LPCSTR lpName);
 
 /// <summary>
-/// Frees the memory module.
+/// Frees the memory module.HMEMMODULE
 /// </summary>
-/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
-VOID __stdcall
-FreeMemModule(_Out_ PMEM_MODULE pMemModule);
+/// <param name="MemModuleHandle">The handle to the memory module instance.</param>
+VOID
+FreeMemModule(_In_ HMEMMODULE MemModuleHandle);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // __MMLOADER_H_INCLUDED_
 ```
 
 #### Use mmLoader as shell code
@@ -51,117 +100,85 @@ If you want to hide the code of mmLoader, you can choose to use mmLoader as shel
  * https://github.com/tishion 
  *
 /************************************************************************/
-#ifndef __MMLOADER_H_INCLUDED_
-#define __MMLOADER_H_INCLUDED_
+#ifndef __MMLOADERSHELLCODE_H_INCLUDED_
+#define __MMLOADERSHELLCODE_H_INCLUDED_
 #pragma once
 #include <windows.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /// <summary>
 /// Error codes.
 /// </summary>
-#define MMEC_OK                           0
-#define MMEC_BAD_PE_FORMAT                1
-#define MMEC_ALLOCATED_MEMORY_FAILED      2
-#define MMEC_INVALID_RELOCATION_BASE      3
-#define MMEC_IMPORT_MODULE_FAILED         4
-#define MMEC_PROTECT_SECTION_FAILED       5
-#define MMEC_INVALID_ENTRY_POINT          6
-
-/// <summary>
-/// Function table. These function will be used in the mmLoader.
-/// </summary>
-typedef struct __NTFUNCPTRS
-{
-    LPVOID pfnGetModuleHandleA;           // GetModuleHandleA
-    LPVOID pfnLoadLibraryA;               // LoadLibraryA
-    LPVOID pfnGetProcAddress;             // GetProcAddress
-    LPVOID pfnVirtualAlloc;               // VirtualAlloc
-    LPVOID pfnVirtualFree;                // VirtualFree
-    LPVOID pfnVirtualProtect;             // VirtualProtect
-    LPVOID pfnReversed_0;
-    LPVOID pfnReversed_1;
-    LPVOID pfnReversed_2;
-    LPVOID pfnReversed_3;
-    LPVOID pfnReversed_4;
-} NTFUNCPTRSTABLE, *PNTFUNCPTRSTABLE;
-
-/// <summary>
-/// Represents the memory module instance.
-/// </summary>
-typedef struct __MEMMODULE
-{
-    union                                // MemModule base
-    {
-#if _WIN64
-        ULONGLONG    iBase;
-#else
-        DWORD        iBase;
-#endif
-        HMODULE        hModule;
-        LPVOID        lpBase;
-        PIMAGE_DOS_HEADER pImageDosHeader;
-    };
-
-    DWORD dwSizeOfImage;                // MemModule size
-    DWORD dwCrc;                        // MemModule crc32
-    DWORD dwPageSize;                   // SystemPageSize
-    BOOL  bLoadOk;                      // MemModule is loaded ok?
-
-    PNTFUNCPTRSTABLE pNtFuncptrsTable;  // Pointer to NT function pointers table 
-
-    DWORD  dwErrorCode;                 // Last error code
-
-    __MEMMODULE()
-    {
-        iBase = 0;
-        dwSizeOfImage = 0;
-        dwCrc = 0;
-        bLoadOk = 0;
-        pNtFuncptrsTable = 0;
-        dwErrorCode = 0;
-        
-        SYSTEM_INFO sysInfo;
-        ::GetNativeSystemInfo(&sysInfo);
-        dwPageSize = sysInfo.dwPageSize;
-    }
-} MEM_MODULE, *PMEM_MODULE;
+#define MMEC_OK 0
+#define MMEC_BAD_PE_FORMAT 1
+#define MMEC_ALLOCATED_MEMORY_FAILED 2
+#define MMEC_INVALID_RELOCATION_BASE 3
+#define MMEC_IMPORT_MODULE_FAILED 4
+#define MMEC_PROTECT_SECTION_FAILED 5
+#define MMEC_INVALID_ENTRY_POINT 6
+#define MMEC_INVALID_WIN32_ENV 0xff
 
 /// <summary>
 /// Enums for MemModuleHelper.
 /// </summary>
-typedef enum _MMHELPER_METHOD
-{
-    MHM_BOOL_LOAD,
-    MHM_VOID_FREE,
-    MHM_FARPROC_GETPROC,
+typedef enum _MMHELPER_METHOD {
+  MHM_BOOL_LOAD,       // Call LoadMemModule
+  MHM_VOID_FREE,       // Call FreeMemModule
+  MHM_FARPROC_GETPROC, // Call GetMemModuleProc
 } MMHELPER_METHOD;
+
+typedef void **HMEMMODULE;
 
 /// <summary>
 /// Helper function for using shell code.
 /// </summary>
-/// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
-/// <param name="method">The <see cref="MMHELPER_METHOD"> to call.</param>
+typedef LPVOID(*Type_MemModuleHelper)(MMHELPER_METHOD, LPVOID, LPVOID, LPVOID);
+
+/// <summary>
+/// Helper function for using shell code.
+/// </summary>
+/// <remarks>
+/// If the method == MHM_BOOL_LOAD, then the function performs the LoadMemModule function.
+/// If the method == MHM_VOID_FREE, then the function performs the FreeMemModule function.
+/// If the method == MHM_FARPROC_GETPROC, then the function performs the GetMemModuleProc function.
+/// </remarks>
+LPVOID
+MemModuleHelper(_In_ MMHELPER_METHOD method, _In_ LPVOID lpArg1, _In_ LPVOID lpArg2, _In_ LPVOID lpArg3);
+
+/// <summary>
+/// Loads the memory module.
+/// </summary>
 /// <param name="lpPeModuleBuffer">The buffer containing the raw data of the module.</param>
+/// <param name="bCallEntry">Call the module entry if true.</param>
+/// <param name="pdwError">The error code.</param>
+/// <returns>The handle to the memory module instance or NULL.</returns>
+HMEMMODULE
+LoadMemModule(_In_ LPVOID lpPeModuleBuffer, _In_ BOOL bCallEntry, _Inout_ DWORD *pdwError);
+
+/// <summary>
+/// Gets the process address of the specific function in the memory module.
+/// </summary>
+/// <param name="MemModuleHandle">The handle to the memory module instance.</param>
 /// <param name="lpName">The function name.</param>
-/// <returns>True if the module is loaded successfully.</returns>
-/// <returns>
-/// If method is MHM_BOOL_LOAD:
-///        The return value type is BOOL.
-///
-/// If method is MHM_FARPROC_GETPROC
-///        The return value type if FARPROC.
-///
-/// If method is MHM_VOID_FREE
-///        There is no return value.
-/// </returns>
-typedef LPVOID(__stdcall * Type_MemModuleHelper)(PMEM_MODULE, MMHELPER_METHOD, LPVOID, LPCSTR, BOOL);
+/// <returns>The address of the function or null.</returns>
+FARPROC
+GetMemModuleProc(_In_ HMEMMODULE MemModuleHandle, _In_ LPCSTR lpName);
+
+/// <summary>
+/// Frees the memory module.HMEMMODULE
+/// </summary>
+/// <param name="MemModuleHandle">The handle to the memory module instance.</param>
+VOID FreeMemModule(_In_ HMEMMODULE MemModuleHandle);
+
 
 /// <summary>
 /// The byte array of the mmLoader shell code.
 /// </summary>
-unsigned char mmLoaderShellCode[] =
-{
-    0x55, 0x8B, 0xEC, 0x51, 0x8B, 0x45, 0x0C, 0x89, 0x45, 0xFC, 0x83, 0x7D, 0xFC, 0x00, 0x74, 0x0E, 
+unsigned char mmLoaderShellCode[] = {
+    ...... 
     ......
     ......
 };
@@ -170,133 +187,79 @@ unsigned char mmLoaderShellCode[] =
 ```
 Then include this header file into your project and use it like this:
 ```cpp
-#include <windows.h>
-#include <tchar.h>
-#include <strsafe.h>
-#include "mmLoaderShellCode.h"
+int
+main() {
+  int iRet = -1;
 
-int main()
-{
-	int iRet = -1;
+  // Memory module
+  HMEMMODULE hMemModule = NULL;
+  DWORD dwErrorCode = 0;
 
-	// Initialize function table
-	NTFUNCPTRSTABLE sNtFuncPtrsTable;
-	sNtFuncPtrsTable.pfnGetModuleHandleA = ::GetModuleHandleA;
-	sNtFuncPtrsTable.pfnLoadLibraryA = ::LoadLibraryA;
-	sNtFuncPtrsTable.pfnGetProcAddress = ::GetProcAddress;
-	sNtFuncPtrsTable.pfnVirtualAlloc = ::VirtualAlloc;
-	sNtFuncPtrsTable.pfnVirtualFree = ::VirtualFree;
-	sNtFuncPtrsTable.pfnVirtualProtect = ::VirtualProtect;
+  // Allocate memory buffer for shell code with EXECUTE privilege
+  LPVOID lpShellCodeBase =
+      ::VirtualAlloc(NULL, sizeof(mmLoaderShellCode), MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 
-	// Memory module
-	MEM_MODULE sMemModule;
-	sMemModule.pNtFuncptrsTable = &sNtFuncPtrsTable;
+  if (NULL == lpShellCodeBase) {
+    ::_tprintf(_T("Failed to allocate space for ShellCode!"));
+    return iRet;
+  }
 
-	// Allocate memory buffer for shell code with EXECUTE privilege
-	LPVOID  lpShellCodeBase = ::VirtualAlloc(
-		NULL,
-		sizeof(mmLoaderShellCode),
-		MEM_RESERVE | MEM_COMMIT,
-		PAGE_EXECUTE_READWRITE);
+  // Copy shell code to the executable memory buffer
+  ::RtlCopyMemory(lpShellCodeBase, mmLoaderShellCode, sizeof(mmLoaderShellCode));
 
-	if (NULL == lpShellCodeBase)
-	{
-		::_tprintf(_T("Failed to allocate space for ShellCode!"));
-		return iRet;
-	}
+  // Get the helper function
+  Type_MemModuleHelper pfnMemModuleHelper = (Type_MemModuleHelper)lpShellCodeBase;
 
-	// Copy shell code to the executable memory buffer
-	::RtlCopyMemory(lpShellCodeBase, mmLoaderShellCode, sizeof(mmLoaderShellCode));
-
-	// Get the helper function 
-	Type_MemModuleHelper pfnMemModuleHelper = (Type_MemModuleHelper)lpShellCodeBase;
-
-	// Load the module
+  // Here we just read the module data from disk file
+  // In your real project you can download the module data from remote without witting it to disk file
 #ifdef _DEBUG
-	WCHAR wszDllPath[] = L"demo-moduled.dll";
+  WCHAR wszDllPath[] = L"demo-moduled.dll";
 #else
-	WCHAR wszDllPath[] = L"demo-module.dll";
+  WCHAR wszDllPath[] = L"demo-module.dll";
 #endif
+  AutoReleaseModuleBuffer moduleBuffer(wszDllPath);
 
-	// Open the module and read it into memory buffer
-	BOOL br = FALSE;
-	HANDLE hFile = ::CreateFileW(wszDllPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
-	if (INVALID_HANDLE_VALUE == hFile || NULL == hFile)
-	{
-		wprintf(L"Failed to open the file: %s\r\n", wszDllPath);
-		return iRet;
-	}
+  // Load the module from the buffer
+  hMemModule = (HMEMMODULE)pfnMemModuleHelper(MHM_BOOL_LOAD, moduleBuffer, (LPVOID)TRUE, &dwErrorCode);
 
-	// Check file size
-	DWORD dwFileSize = ::GetFileSize(hFile, NULL);
-	if (INVALID_FILE_SIZE == dwFileSize || dwFileSize < sizeof(IMAGE_DOS_HEADER))
-	{
-		::CloseHandle(hFile);
-		_tprintf(_T("Invalid file size: %d\r\n"), dwFileSize);
-		return iRet;
-	}
+  // After the module was loaded we can release the original buffer
+  moduleBuffer.Release();
 
-	HANDLE hFileMapping = ::CreateFileMappingW(hFile, 0, PAGE_READONLY, 0, 0, NULL);
-	if (NULL == hFileMapping)
-	{
-		::CloseHandle(hFile);
-		_tprintf(_T("Failed to create file mapping.\r\n"));
-		return iRet;
-	}
+  if (hMemModule) {
+    _tprintf(_T("Module was load successfully. Module Base: 0x%p!\r\n"), (LPVOID)hMemModule);
 
-	LPVOID pBuffer = ::MapViewOfFile(hFileMapping, FILE_MAP_READ, 0, 0, 0);
-	if (NULL == pBuffer)
-	{
-		::CloseHandle(hFileMapping);
-		::CloseHandle(hFile);
-		_tprintf(_T("Failed to map view of the file.\r\n"));
-		return iRet;
-	}
+    // Get address of function demoFunction
+    LPVOID lpAddr = (LPVOID)pfnMemModuleHelper(MHM_FARPROC_GETPROC, hMemModule, "demoFunction", 0);
+    if (lpAddr) {
+      _tprintf(_T("Get address of demoFunction successfully. Address: 0x%p!\r\n"), lpAddr);
 
-	if (pfnMemModuleHelper(&sMemModule, MHM_BOOL_LOAD, pBuffer, NULL, FALSE))
-	{
-		::UnmapViewOfFile(pBuffer);
-		::CloseHandle(hFileMapping);
-		::CloseHandle(hFile);
+      // Function pointer type of demoFunction
+      typedef BOOL(__stdcall * Type_TargetFunction)(unsigned char *, unsigned int);
 
-		_tprintf(_T("Module was load successfully. Module Base: 0x%p!\r\n"), sMemModule.lpBase);
+      // Call the demoFunction
+      Type_TargetFunction pfnFunction = (Type_TargetFunction)lpAddr;
 
-		// Get address of function demoFunction
-		LPVOID lpAddr = (LPVOID)pfnMemModuleHelper(&sMemModule, MHM_FARPROC_GETPROC, NULL, "demoFunction", FALSE);
-		if (lpAddr)
-		{
-			_tprintf(_T("Get address of demoFunction successfully. Address: 0x%p!\r\n"), lpAddr);
+      unsigned char buf[MAX_PATH] = {0};
+      if (pfnFunction(buf, MAX_PATH)) {
+        char *p = "{f56fee02-16d1-44a3-b191-4d7535f92ca5}";
+        iRet = ::memcmp(buf, p, strlen(p));
+        if (0 == iRet)
+          _tprintf(_T("Called target function demoFunction successfully with correct return value!\r\n"));
+        else
+          _tprintf(_T("Called target function demoFunction successfully, but returned unexpected value!\r\n"));
+      }
+    } else
+      _tprintf(_T("Failed to get address of MessageBoxA from memory module."));
 
-			// Function pointer type of demoFunction
-			typedef BOOL(__stdcall * Type_TargetFunction)(unsigned char*, unsigned int);
+    // Free the module
+    pfnMemModuleHelper(MHM_VOID_FREE, hMemModule, 0, 0);
+  } else
+    _tprintf(_T("Failed to load the module.!\r\n"));
 
-			// Call the demoFunction
-			Type_TargetFunction pfnFunction = (Type_TargetFunction)lpAddr;
+  // Free the memory buffer of the shell code
+  ::VirtualFree(lpShellCodeBase, 0, MEM_RELEASE);
 
-			unsigned char buf[MAX_PATH] = { 0 };
-			if (pfnFunction(buf, MAX_PATH))
-			{
-				char* p = "{f56fee02-16d1-44a3-b191-4d7535f92ca5}";
-				iRet = ::memcmp(buf, p, strlen(p));
-				if (0 == iRet)
-					_tprintf(_T("Called target function demoFunction successfully with correct return value!\r\n"));
-				else
-					_tprintf(_T("Called target function demoFunction successfully, but returned unexpected value!\r\n"));
-			}
-		}
-		else
-			_tprintf(_T("Failed to get address of MessageBoxA from memory module."));
-
-		// Free the module
-		pfnMemModuleHelper(&sMemModule, MHM_VOID_FREE, NULL, NULL, FALSE);
-	}
-	else
-		_tprintf(_T("Failed to load user32.dll!\r\n"));
-
-	// Free the memory buffer of the shell code
-	::VirtualFree(lpShellCodeBase, 0, MEM_RELEASE);
-
-	return iRet;
+  return iRet;
 }
 ```
 
