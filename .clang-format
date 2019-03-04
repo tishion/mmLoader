@@ -1,0 +1,7 @@
+---
+BasedOnStyle: LLVM
+AlwaysBreakAfterDefinitionReturnType: All
+AlwaysBreakAfterReturnType: All
+ColumnLimit: 120
+
+...
