@@ -2,160 +2,130 @@
 //
 
 #include "stdafx.h"
-#include <windows.h>
 #include <strsafe.h>
+#include <windows.h>
+
 #include "..\..\output\include\mmLoader\mmLoader.h"
 
-class AutoReleaseModuleBuffer
-{
+class AutoReleaseModuleBuffer {
 public:
-	AutoReleaseModuleBuffer(LPCTSTR wszDllPath)
-		: m_pBuffer(NULL), m_hFileMapping(NULL), m_hFile(NULL)
-	{
-		// Open the module and read it into memory buffer
-		m_hFile = ::CreateFileW(wszDllPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
-		if (INVALID_HANDLE_VALUE == m_hFile || NULL == m_hFile)
-		{
-			wprintf(L"Failed to open the file: %s\r\n", wszDllPath);
-			return;
-		}
+  AutoReleaseModuleBuffer(LPCTSTR wszDllPath) : m_pBuffer(NULL), m_hFileMapping(NULL), m_hFile(NULL) {
+    // Open the module and read it into memory buffer
+    m_hFile = ::CreateFileW(wszDllPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
+    if (INVALID_HANDLE_VALUE == m_hFile || NULL == m_hFile) {
+      wprintf(L"Failed to open the file: %s\r\n", wszDllPath);
+      return;
+    }
 
-		// Check file size
-		DWORD dwFileSize = ::GetFileSize(m_hFile, NULL);
-		if (INVALID_FILE_SIZE == dwFileSize || dwFileSize < sizeof(IMAGE_DOS_HEADER))
-		{
-			::CloseHandle(m_hFile);
-			m_hFile = NULL;
-			_tprintf(_T("Invalid file size: %d\r\n"), dwFileSize);
-			return;
-		}
+    // Check file size
+    DWORD dwFileSize = ::GetFileSize(m_hFile, NULL);
+    if (INVALID_FILE_SIZE == dwFileSize || dwFileSize < sizeof(IMAGE_DOS_HEADER)) {
+      ::CloseHandle(m_hFile);
+      m_hFile = NULL;
+      _tprintf(_T("Invalid file size: %d\r\n"), dwFileSize);
+      return;
+    }
 
-		m_hFileMapping = ::CreateFileMappingW(m_hFile, 0, PAGE_READONLY, 0, 0, NULL);
-		if (NULL == m_hFileMapping)
-		{
-			::CloseHandle(m_hFile);
-			m_hFile = NULL;
-			_tprintf(_T("Failed to create file mapping.\r\n"));
-			return;
-		}
+    m_hFileMapping = ::CreateFileMappingW(m_hFile, 0, PAGE_READONLY, 0, 0, NULL);
+    if (NULL == m_hFileMapping) {
+      ::CloseHandle(m_hFile);
+      m_hFile = NULL;
+      _tprintf(_T("Failed to create file mapping.\r\n"));
+      return;
+    }
 
-		m_pBuffer = ::MapViewOfFile(m_hFileMapping, FILE_MAP_READ, 0, 0, 0);
-		if (NULL == m_pBuffer)
-		{
-			::CloseHandle(m_hFileMapping);
-			::CloseHandle(m_hFile);
-			m_hFileMapping = NULL;
-			m_hFile = NULL;
-			_tprintf(_T("Failed to map view of the file.\r\n"));
-		}
-	}
+    m_pBuffer = ::MapViewOfFile(m_hFileMapping, FILE_MAP_READ, 0, 0, 0);
+    if (NULL == m_pBuffer) {
+      ::CloseHandle(m_hFileMapping);
+      ::CloseHandle(m_hFile);
+      m_hFileMapping = NULL;
+      m_hFile = NULL;
+      _tprintf(_T("Failed to map view of the file.\r\n"));
+    }
+  }
 
-	~AutoReleaseModuleBuffer()
-	{
-		Release();
-	}
+  ~AutoReleaseModuleBuffer() { Release(); }
 
-	void Release()
-	{
-		if (m_pBuffer)
-		{
-			::UnmapViewOfFile(m_pBuffer);
-			m_pBuffer = NULL;
-		}
+  void
+  Release() {
+    if (m_pBuffer) {
+      ::UnmapViewOfFile(m_pBuffer);
+      m_pBuffer = NULL;
+    }
 
-		if (m_hFileMapping)
-		{
-			::CloseHandle(m_hFileMapping);
-			m_hFileMapping = NULL;
-		}
+    if (m_hFileMapping) {
+      ::CloseHandle(m_hFileMapping);
+      m_hFileMapping = NULL;
+    }
 
-		if (m_hFile)
-		{
-			::CloseHandle(m_hFile);
-			m_hFile = NULL;
-		}
-	}
+    if (m_hFile) {
+      ::CloseHandle(m_hFile);
+      m_hFile = NULL;
+    }
+  }
 
-	operator LPVOID()
-	{
-		return m_pBuffer;
-	}
+  operator LPVOID() { return m_pBuffer; }
 
 private:
-	LPVOID m_pBuffer;
-	HANDLE m_hFile;
-	HANDLE m_hFileMapping;
+  LPVOID m_pBuffer;
+  HANDLE m_hFile;
+  HANDLE m_hFileMapping;
 };
 
-int main()
-{
-	// Return value
-	int iRet = -1;
+int
+main() {
+  // Return value
+  int iRet = -1;
 
-	// Initialize function table
-	NTFUNCPTRSTABLE sNtFuncPtrsTable;
-	sNtFuncPtrsTable.pfnGetModuleHandleA = ::GetModuleHandleA;
-	sNtFuncPtrsTable.pfnLoadLibraryA = ::LoadLibraryA;
-	sNtFuncPtrsTable.pfnGetProcAddress = ::GetProcAddress;
-	sNtFuncPtrsTable.pfnVirtualAlloc = ::VirtualAlloc;
-	sNtFuncPtrsTable.pfnVirtualFree = ::VirtualFree;
-	sNtFuncPtrsTable.pfnVirtualProtect = ::VirtualProtect;
+  // Initialize MEM_MODULE
+  HMEMMODULE hMemModule = NULL;
+  DWORD dwErrorCode = 0;
 
-	// Initialize MEM_MODULE
-	MEM_MODULE sMemModule;
-	sMemModule.pNtFuncptrsTable = &sNtFuncPtrsTable;
-
-	// Here we just read the module data from disk file
-	// In your real project you can download the module data from remote without witting it to disk file
+  // Here we just read the module data from disk file
+  // In your real project you can download the module data from remote without witting it to disk file
 #ifdef _DEBUG
-	WCHAR wszDllPath[] = L"demo-moduled.dll";
+  WCHAR wszDllPath[] = L"demo-moduled.dll";
 #else
-	WCHAR wszDllPath[] = L"demo-module.dll";
+  WCHAR wszDllPath[] = L"demo-module.dll";
 #endif
-	AutoReleaseModuleBuffer moduleBuffer(wszDllPath);
+  AutoReleaseModuleBuffer moduleBuffer(wszDllPath);
 
-	// Load the module from the buffer
-	BOOL bLoaded = (BOOL)MemModuleHelper(&sMemModule, MHM_BOOL_LOAD, moduleBuffer, NULL, TRUE);
+  // Load the module from the buffer
+  hMemModule = (HMEMMODULE)MemModuleHelper(MHM_BOOL_LOAD, moduleBuffer, (LPVOID)TRUE, &dwErrorCode);
 
-	// After the module was loaded we can release the original buffer
-	moduleBuffer.Release();
+  // After the module was loaded we can release the original buffer
+  moduleBuffer.Release();
 
-	if (bLoaded)
-	{
-		_tprintf(_T("Module was loaded successfully. Module Base: 0x%p!\r\n"), sMemModule.lpBase);
+  if (hMemModule) {
+    _tprintf(_T("Module was loaded successfully. Module Base: 0x%p!\r\n"), (LPVOID)hMemModule);
 
-		// Get address of function demoFunction
-		LPVOID lpAddr = (LPVOID)MemModuleHelper(&sMemModule, MHM_FARPROC_GETPROC, NULL, "demoFunction", FALSE);
-		if (lpAddr)
-		{
-			_tprintf(_T("Get address of demoFunction successfully. Address: 0x%p!\r\n"), lpAddr);
+    // Get address of function demoFunction
+    LPVOID lpAddr = (LPVOID)MemModuleHelper(MHM_FARPROC_GETPROC, hMemModule, "demoFunction", 0);
+    if (lpAddr) {
+      _tprintf(_T("Get address of demoFunction successfully. Address: 0x%p!\r\n"), lpAddr);
 
-			// Function pointer type of demoFunction
-			typedef BOOL(_stdcall * Type_TargetFunction)(unsigned char*, unsigned int);
+      // Function pointer type of demoFunction
+      typedef BOOL(_stdcall * Type_TargetFunction)(unsigned char *, unsigned int);
 
-			// Call the demoFunction
-			Type_TargetFunction pfnFunction = (Type_TargetFunction)lpAddr;
+      // Call the demoFunction
+      Type_TargetFunction pfnFunction = (Type_TargetFunction)lpAddr;
 
-			unsigned char buf[MAX_PATH] = { 0 };
-			if (pfnFunction(buf, MAX_PATH))
-			{
-				char* p = "{f56fee02-16d1-44a3-b191-4d7535f92ca5}";
-				iRet = ::memcmp(buf, p, strlen(p));
-				if (0 == iRet)
-					_tprintf(_T("Called target function demoFunction successfully with correct return value!\r\n"));
-				else
-					_tprintf(_T("Called target function demoFunction successfully, but returned unexpected value!\r\n"));
-			}
-		}
-		else
-			_tprintf(_T("Failed to get address of demoFunction from memory module.\r\n"));
+      unsigned char buf[MAX_PATH] = {0};
+      if (pfnFunction(buf, MAX_PATH)) {
+        char *p = "{f56fee02-16d1-44a3-b191-4d7535f92ca5}";
+        iRet = ::memcmp(buf, p, strlen(p));
+        if (0 == iRet)
+          _tprintf(_T("Called target function demoFunction successfully with correct return value!\r\n"));
+        else
+          _tprintf(_T("Called target function demoFunction successfully, but returned unexpected value!\r\n"));
+      }
+    } else
+      _tprintf(_T("Failed to get address of demoFunction from memory module.\r\n"));
 
-		// Free the module
-		MemModuleHelper(&sMemModule, MHM_VOID_FREE, NULL, NULL, FALSE);
-	}
-	else
-		_tprintf(_T("Failed to load the module!\r\n"));
+    // Free the module
+    MemModuleHelper(MHM_VOID_FREE, hMemModule, 0, 0);
+  } else
+    _tprintf(_T("Failed to load the module!\r\n"));
 
-	return iRet;
+  return iRet;
 }
-

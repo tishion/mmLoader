@@ -22,12 +22,11 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="mmLoader-shellcode-generator.cpp">
+    <ClCompile Include="mmLoader-shellcode-generator.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="functionorder_x64" />
-    <None Include="functionorder_x86" />
+    <None Include="functionorder" />
   </ItemGroup>
 </Project>

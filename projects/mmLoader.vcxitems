@@ -14,11 +14,9 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\src\mmLoader\crc.h" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\src\mmLoader\mmLoader.cpp" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\src\mmLoader\strmem.h">
-      <FileType>CppHeader</FileType>
-    </ClInclude>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\src\mmLoader\mmLoader.c">
+      <FileType>CppCode</FileType>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\src\mmLoader\mmLoader.h" />
