@@ -2,9 +2,10 @@
 //
 
 #include "stdafx.h"
-#include <strsafe.h>
 #include <tchar.h>
 #include <windows.h>
+
+#include <strsafe.h>
 
 #ifdef _WIN64
 #ifdef _DEBUG

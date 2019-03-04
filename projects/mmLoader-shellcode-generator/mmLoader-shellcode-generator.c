@@ -4,6 +4,7 @@
 //
 #include "..\src\mmLoader\mmLoader.h"
 #include "stdafx.h"
+
 #include <Strsafe.h>
 #include <shlwapi.h>
 #include <windows.h>

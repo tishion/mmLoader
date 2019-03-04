@@ -2,8 +2,10 @@
 //
 
 #include "stdafx.h"
-#include <strsafe.h>
+#include <tchar.h>
 #include <windows.h>
+
+#include <strsafe.h>
 
 #include "..\..\output\include\mmLoader\mmLoader.h"
 
