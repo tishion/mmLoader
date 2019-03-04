@@ -623,11 +623,17 @@ MapMemModuleSections(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer) {
       pSectionBase = MakePointer(LPVOID, lpBase, pImageSectionHeader[i].VirtualAddress);
 
       if (0 == pImageSectionHeader[i].SizeOfRawData) {
-        if (pImageNtHeader->OptionalHeader.SectionAlignment > 0) {
+        DWORD size = 0;
+        if (pImageSectionHeader[i].Misc.VirtualSize > 0) {
+          size = pImageSectionHeader[i].Misc.VirtualSize;
+        } else {
+          size = pImageNtHeader->OptionalHeader.SectionAlignment;
+        }
+
+        if (size > 0) {
           // If the size is zero, but the section alignment is not zero then
           // allocate memory with the alignment
-          pDest = pfnVirtualAlloc(pSectionBase, pImageNtHeader->OptionalHeader.SectionAlignment, MEM_COMMIT,
-                                  PAGE_READWRITE);
+          pDest = pfnVirtualAlloc(pSectionBase, size, MEM_COMMIT, PAGE_READWRITE);
           if (NULL == pDest) {
             pMemModule->dwErrorCode = MMEC_ALLOCATED_MEMORY_FAILED;
             return FALSE;
@@ -635,7 +641,7 @@ MapMemModuleSections(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer) {
 
           // Always use position from file to support alignments smaller than
           // page size.
-          mml_memset(pSectionBase, 0, pImageNtHeader->OptionalHeader.SectionAlignment);
+          mml_memset(pSectionBase, 0, size);
         }
       } else {
         // Commit this section to target address
