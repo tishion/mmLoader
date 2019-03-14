@@ -4,6 +4,7 @@ Load dll modules from memory directly bypassing Window PE loader
 
 Last build status:
 
+[![Build status](https://dev.azure.com/virtable/GitHub-CI/_apis/build/status/mmLoader/build-mmLoader-x86-x64-debug-release)](https://dev.azure.com/virtable/GitHub-CI/_build/latest?definitionId=11)
 [![Build status](https://ci.appveyor.com/api/projects/status/uyat3s3g76crdbkp?svg=true)](https://ci.appveyor.com/project/tishion/mmloader)
 
 Nuget native package: 
