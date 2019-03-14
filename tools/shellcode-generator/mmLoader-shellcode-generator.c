@@ -1,13 +1,15 @@
-// mmLoader-shellcode-generator.cpp : Defines the entry point for the console
+﻿// mmLoader-shellcode-generator.cpp : Defines the entry point for the console
 // application.
 //
 //
-#include "..\src\mmLoader\mmLoader.h"
-#include "stdafx.h"
 
+#include <stdio.h>
+#include <tchar.h>
+#include <windows.h>
 #include <Strsafe.h>
 #include <shlwapi.h>
-#include <windows.h>
+
+#include <mmLoader.h>
 
 #pragma comment(linker, "/NODEFAULTLIB")
 #pragma comment(linker, "/ENTRY:CodeBag")
@@ -256,7 +258,8 @@ CodeBag() {
   int n = 0;
   for (unsigned char *p = pStart; p < pEnd; p++) {
     // Start one row
-    if (0 == n++) StringCchCatA(pBuffer, textLength, "\t");
+    if (0 == n++)
+      StringCchCatA(pBuffer, textLength, "\t");
 
     {
       // Hex to string
@@ -267,7 +270,7 @@ CodeBag() {
       StringCchCatA(pBuffer, textLength, ", ");
     }
     // End one row
-    if (n == 16) { 
+    if (n == 16) {
       StringCchCatA(pBuffer, textLength, "\r\n");
       n = 0;
     }

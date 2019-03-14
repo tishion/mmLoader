@@ -9,25 +9,25 @@
 
 #ifdef _WIN64
 #ifdef _DEBUG
-#include "mmLoader/mmLoaderShellCode-x64-Debug.h"
+#include <mmLoaderShellCode-x64-Debug.h>
 #else
-#include "mmLoader/mmLoaderShellCode-x64-Release.h"
+#include <mmLoaderShellCode-x64-Release.h>
 #endif
 #else
 #ifdef _DEBUG
-#include "mmLoader/mmLoaderShellCode-x86-Debug.h"
+#include <mmLoaderShellCode-x86-Debug.h>
 #else
-#include "mmLoader/mmLoaderShellCode-x86-Release.h"
+#include <mmLoaderShellCode-x86-Release.h>
 #endif
 #endif
 
 class AutoReleaseModuleBuffer {
 public:
-  AutoReleaseModuleBuffer(LPCTSTR wszDllPath) : m_pBuffer(NULL), m_hFileMapping(NULL), m_hFile(NULL) {
+  AutoReleaseModuleBuffer(LPCTSTR szDllPath) : m_pBuffer(NULL), m_hFileMapping(NULL), m_hFile(NULL) {
     // Open the module and read it into memory buffer
-    m_hFile = ::CreateFileW(wszDllPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
+    m_hFile = ::CreateFile(szDllPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
     if (INVALID_HANDLE_VALUE == m_hFile || NULL == m_hFile) {
-      wprintf(L"Failed to open the file: %s\r\n", wszDllPath);
+      _tprintf(_T("Failed to open the file: %s\r\n"), szDllPath);
       return;
     }
 
@@ -112,11 +112,11 @@ main() {
   // Here we just read the module data from disk file
   // In your real project you can download the module data from remote without witting it to disk file
 #ifdef _DEBUG
-  WCHAR wszDllPath[] = L"demo-moduled.dll";
+  TCHAR szDllPath[] = _T("demo-moduled.dll");
 #else
-  WCHAR wszDllPath[] = L"demo-module.dll";
+  TCHAR szDllPath[] = _T("demo-module.dll");
 #endif
-  AutoReleaseModuleBuffer moduleBuffer(wszDllPath);
+  AutoReleaseModuleBuffer moduleBuffer(szDllPath);
 
   // Load the module from the buffer
   hMemModule = (HMEMMODULE)pfnMemModuleHelper(MHM_BOOL_LOAD, moduleBuffer, (LPVOID)TRUE, &dwErrorCode);

@@ -7,15 +7,15 @@
 
 #include <strsafe.h>
 
-#include "..\..\output\include\mmLoader\mmLoader.h"
+#include <mmLoader.h>
 
 class AutoReleaseModuleBuffer {
 public:
-  AutoReleaseModuleBuffer(LPCTSTR wszDllPath) : m_pBuffer(NULL), m_hFileMapping(NULL), m_hFile(NULL) {
+  AutoReleaseModuleBuffer(LPCTSTR szDllPath) : m_pBuffer(NULL), m_hFileMapping(NULL), m_hFile(NULL) {
     // Open the module and read it into memory buffer
-    m_hFile = ::CreateFileW(wszDllPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
+    m_hFile = ::CreateFile(szDllPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
     if (INVALID_HANDLE_VALUE == m_hFile || NULL == m_hFile) {
-      wprintf(L"Failed to open the file: %s\r\n", wszDllPath);
+      _tprintf(_T("Failed to open the file: %s\r\n"), szDllPath);
       return;
     }
 
@@ -28,7 +28,7 @@ public:
       return;
     }
 
-    m_hFileMapping = ::CreateFileMappingW(m_hFile, 0, PAGE_READONLY, 0, 0, NULL);
+    m_hFileMapping = ::CreateFileMapping(m_hFile, 0, PAGE_READONLY, 0, 0, NULL);
     if (NULL == m_hFileMapping) {
       ::CloseHandle(m_hFile);
       m_hFile = NULL;
@@ -84,13 +84,13 @@ main() {
   DWORD dwErrorCode = 0;
 
   // Here we just read the module data from disk file
-  // In your real project you can download the module data from remote without witting it to disk file
+  // In your real project you can download the module data from remote without writing to disk file
 #ifdef _DEBUG
-  WCHAR wszDllPath[] = L"demo-moduled.dll";
+  TCHAR szDllPath[] = _T("demo-moduled.dll");
 #else
-  WCHAR wszDllPath[] = L"demo-module.dll";
+  TCHAR szDllPath[] = _T("demo-module.dll");
 #endif
-  AutoReleaseModuleBuffer moduleBuffer(wszDllPath);
+  AutoReleaseModuleBuffer moduleBuffer(szDllPath);
 
   // Load the module from the buffer
   hMemModule = (HMEMMODULE)MemModuleHelper(MHM_BOOL_LOAD, moduleBuffer, (LPVOID)TRUE, &dwErrorCode);

@@ -3,5 +3,4 @@ BasedOnStyle: LLVM
 AlwaysBreakAfterDefinitionReturnType: All
 AlwaysBreakAfterReturnType: All
 ColumnLimit: 120
-
-...
+SortIncludes: false
