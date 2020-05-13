@@ -256,8 +256,8 @@ CodeBag() {
   int n = 0;
   for (unsigned char *p = pStart; p < pEnd; p++) {
     // Start one row
-    if (0 == n++)
-      StringCchCatA(pBuffer, textLength, "\t");
+    if (0 == n++) StringCchCatA(pBuffer, textLength, "\t");
+
     {
       // Hex to string
       StringCchCatA(pBuffer, textLength, "0x");
@@ -267,8 +267,10 @@ CodeBag() {
       StringCchCatA(pBuffer, textLength, ", ");
     }
     // End one row
-    if (n == 16 && !(n = 0))
+    if (n == 16) { 
       StringCchCatA(pBuffer, textLength, "\r\n");
+      n = 0;
+    }
   }
   StringCchCatA(pBuffer, textLength, tail);
 
@@ -280,7 +282,7 @@ CodeBag() {
 
   ConsoleWrite("Create file mmLoaderShellCode.h\r\n");
   // Create file to save the content
-  HANDLE h = CreateFileW(pFolderPath, FILE_WRITE_ACCESS, FILE_SHARE_READ, NULL, CREATE_ALWAYS, NULL, NULL);
+  HANDLE h = CreateFileW(pFolderPath, FILE_WRITE_ACCESS, FILE_SHARE_READ, NULL, CREATE_ALWAYS, 0, NULL);
   DWORD dwBytesWritten = 0;
   if (INVALID_HANDLE_VALUE == h || NULL == h) {
     ConsoleWrite("Failed to create file \"mmLoaderShellCode\".\r\n");
@@ -297,7 +299,7 @@ CodeBag() {
   }
 
   // Free the content buffer
-  HeapFree(GetProcessHeap(), NULL, pBuffer);
+  HeapFree(GetProcessHeap(), 0, pBuffer);
 
   // Wait for the return key
   ConsoleWrite("\r\nShell code generated done.\r\n");

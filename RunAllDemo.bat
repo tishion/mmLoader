@@ -35,3 +35,5 @@ FOR /r %%i in (*.exe) DO (
 	%%i
 )
 popd
+
+pause

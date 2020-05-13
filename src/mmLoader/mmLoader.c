@@ -127,7 +127,7 @@ LPVOID
 MemModuleHelper(_In_ MMHELPER_METHOD method, _In_ LPVOID lpArg1, _In_ LPVOID lpArg2, _In_ LPVOID lpArg3) {
   switch (method) {
   case MHM_BOOL_LOAD: {
-    return (LPVOID)(INT_PTR)LoadMemModule(lpArg1, (BOOL)lpArg2, (DWORD *)lpArg3);
+    return (LPVOID)(INT_PTR)LoadMemModule(lpArg1, (BOOL)(lpArg2 != 0), (DWORD *)lpArg3);
   } break;
   case MHM_VOID_FREE: {
     FreeMemModule(lpArg1);
