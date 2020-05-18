@@ -36,7 +36,7 @@ endif()
 
 # Flags
 # C standard
-set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_STANDARD_REQUIRED ON) 
 set(CMAKE_C_STANDARD 11)
 
 # C++ standard
@@ -100,10 +100,22 @@ add_library(${PROJECT_NAME} STATIC
     src/mmloader/mmloader.c
 )
 
+# header
+set_target_properties(${PROJECT_NAME}
+    PROPERTIES
+        PUBLIC_HEADER "src/mmloader/mmloader.h"
+)
+
 # Add post build event to copy the header files
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/output/mmloader/include/
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/output/mmloader/include
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/src/mmloader/mmLoader.h ${CMAKE_SOURCE_DIR}/output/mmloader/include/
+)
+
+# install lib and header files
+install(TARGETS ${PROJECT_NAME}
+    ARCHIVE DESTINATION lib
+    PUBLIC_HEADER DESTINATION include/mmloader
 )
 
 # Shellcode generator project
@@ -130,4 +142,4 @@ endif()
 
 if (BUILD_MMLOADER_DEMO)
     add_subdirectory(demo) 
-endif()
+endif() 

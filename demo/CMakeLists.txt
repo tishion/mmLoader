@@ -1,9 +1,9 @@
 project(mmloader-demo)
 
 if (BUILD_ARC_X8632) 
-    set(MMLOADER_OUT ${CMAKE_SOURCE_DIR}/output/mmloader/x86)
+    set(MMLOADER_DEMO_OUT ${CMAKE_SOURCE_DIR}/output/demo/x86)
 elseif(BUILD_ARC_X8664)
-    set(MMLOADER_OUT ${CMAKE_SOURCE_DIR}/output/mmloader/x64)
+    set(MMLOADER_DEMO_OUT ${CMAKE_SOURCE_DIR}/output/demo/x64)
 else()
     message(FATAL_ERROR "Unsupported Architecture")
 endif()
