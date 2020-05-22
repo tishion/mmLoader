@@ -23,6 +23,19 @@ The build system has been switched to CMake, you can generate and build the proj
 > -DBUILD_SHELLCODE_GEN=TRUE: enable shellcode generator  
 > -DBUILD_MMLOADER_DEMO=TRUE: enable demo projects  
 
+
+#### vcpkg support
+mmloader is available on vcpkg now, just install it by the commmand:
+> vcpkg install mmloader:x86-windows-static
+
+> vcpkg install mmloader:x64-windows-static
+
+if you want to use mmloader in shellcod mode, you need to install it withe feature shellcode:
+> vcpkg install mmloader[shellcode]:x86-windows-static
+
+> vcpkg install mmloader[shellcode]:x64-windows-static
+
+
 #### build the projects
 > cmake --build .build
 
