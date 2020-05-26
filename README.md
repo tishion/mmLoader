@@ -2,6 +2,18 @@
 
 mmLoader is a library used for loading DLL modules from memory directly. Also, it will bypass the Windows PE loader with processing the import/export table correctly.
 
+#### vcpkg support
+mmloader is available on vcpkg now, just install it by the commmand:
+> vcpkg install mmloader:x86-windows-static
+
+> vcpkg install mmloader:x64-windows-static
+
+if you want to use mmloader in shellcod mode, you need to install it with feature shellcode:
+> vcpkg install mmloader[shellcode]:x86-windows-static
+
+> vcpkg install mmloader[shellcode]:x64-windows-static
+
+
 | triplets  | status  |
 |---|---|
 | x86-windows-static | [![Build status](https://dev.azure.com/sheentian/GitHub-CI/_apis/build/status/mmLoader/mmloader-x86-windows-static)](https://dev.azure.com/sheentian/GitHub-CI/_build/latest?definitionId=11) |
@@ -22,19 +34,6 @@ The build system has been switched to CMake, you can generate and build the proj
 > -A : target architecture, support Win32 & x64 only  
 > -DBUILD_SHELLCODE_GEN=TRUE: enable shellcode generator  
 > -DBUILD_MMLOADER_DEMO=TRUE: enable demo projects  
-
-
-#### vcpkg support
-mmloader is available on vcpkg now, just install it by the commmand:
-> vcpkg install mmloader:x86-windows-static
-
-> vcpkg install mmloader:x64-windows-static
-
-if you want to use mmloader in shellcod mode, you need to install it withe feature shellcode:
-> vcpkg install mmloader[shellcode]:x86-windows-static
-
-> vcpkg install mmloader[shellcode]:x64-windows-static
-
 
 #### build the projects
 > cmake --build .build
