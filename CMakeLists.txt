@@ -57,7 +57,7 @@ set(CMAKE_CXX_FLAGS_RELEASE
     "/MT /O2 /Ob2 /DNDEBUG" 
     CACHE STRING "default C++ compile flags for release build" FORCE)
 set(CMAKE_C_FLAGS 
-    "/DWIN32 /D_WINDOWS /W3 /WX /GR /GS- /Gy /FAcs /Z7 /DEBUG"
+    "/DWIN32 /D_WINDOWS /W3 /WX /GR /GS- /Gy /FAcs /Z7 /DEBUG /Wv:18"
     CACHE STRING "default C++ compile flags" FORCE)
 set(CMAKE_C_FLAGS_DEBUG
     "/MTd /Ob0 /Od" 
