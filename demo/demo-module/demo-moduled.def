@@ -1,4 +1,0 @@
-LIBRARY     DEMO-MODULE
-
-EXPORTS
-	demoFunction

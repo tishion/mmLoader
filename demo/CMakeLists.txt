@@ -20,8 +20,6 @@ add_library(demo-module SHARED
 target_compile_definitions(demo-module PUBLIC -DDEMOMODULE_EXPORTS)
 set_target_properties(demo-module PROPERTIES 
     FOLDER demo
-    LINK_FLAGS_DEBUG "/DEF:${CMAKE_CURRENT_SOURCE_DIR}/demo-module/demo-moduled.def"
-    LINK_FLAGS_RELEASE "/DEF:${CMAKE_CURRENT_SOURCE_DIR}/demo-module/demo-module.def"
     ARCHIVE_OUTPUT_DIRECTORY "${MMLOADER_DEMO_OUT}/lib"
     LIBRARY_OUTPUT_DIRECTORY "${MMLOADER_DEMO_OUT}/bin"
     RUNTIME_OUTPUT_DIRECTORY "${MMLOADER_DEMO_OUT}/bin"

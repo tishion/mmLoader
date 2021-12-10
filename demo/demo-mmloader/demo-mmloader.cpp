@@ -85,11 +85,7 @@ main() {
 
   // Here we just read the module data from disk file
   // In your real project you can download the module data from remote without writing to disk file
-#ifdef _DEBUG
-  TCHAR szDllPath[] = _T("demo-moduled.dll");
-#else
   TCHAR szDllPath[] = _T("demo-module.dll");
-#endif
   AutoReleaseModuleBuffer moduleBuffer(szDllPath);
 
   // Load the module from the buffer
@@ -102,7 +98,7 @@ main() {
     _tprintf(_T("Module was loaded successfully. Module Base: 0x%p!\r\n"), (LPVOID)hMemModule);
 
     // Get address of function demoFunction
-    LPVOID lpAddr = (LPVOID)MemModuleHelper(MHM_FARPROC_GETPROC, hMemModule, "demoFunction", 0);
+    LPVOID lpAddr = (LPVOID)MemModuleHelper(MHM_FARPROC_GETPROC, hMemModule, "demoFunction", (VOID *)TRUE);
     if (lpAddr) {
       _tprintf(_T("Get address of demoFunction successfully. Address: 0x%p!\r\n"), lpAddr);
 
@@ -113,6 +109,12 @@ main() {
       Type_TargetFunction pfnFunction = (Type_TargetFunction)lpAddr;
 
       unsigned char buf[MAX_PATH] = {0};
+
+       //Load the module with LoadLibrary for debug
+      HMODULE m = ::LoadLibraryA(szDllPath);
+      Type_TargetFunction f = (Type_TargetFunction)::GetProcAddress(m, "demoFunction");
+      f(buf, MAX_PATH);
+
       if (pfnFunction(buf, MAX_PATH)) {
         char *p = "{f56fee02-16d1-44a3-b191-4d7535f92ca5}";
         iRet = ::memcmp(buf, p, strlen(p));
