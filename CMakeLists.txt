@@ -47,24 +47,12 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CONFIGURATION_TYPES Debug Release)
 
 # Default compile flags
-set(CMAKE_CXX_FLAGS 
-    "/DWIN32 /D_WINDOWS /W3 /WX /GR /GS- /Gy /FAcs /Z7 /DEBUG /Wv:18"
+# Thanks for the PR https://github.com/microsoft/vcpkg/pull/15151/files from https://github.com/BillyONeal
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GS-"
     CACHE STRING "default C++ compile flags" FORCE)
-set(CMAKE_CXX_FLAGS_DEBUG 
-    "/MTd /Ob0 /Od" 
-    CACHE STRING "default C++ compile flags for debug build" FORCE)
-set(CMAKE_CXX_FLAGS_RELEASE 
-    "/MT /O2 /Ob2 /DNDEBUG" 
-    CACHE STRING "default C++ compile flags for release build" FORCE)
-set(CMAKE_C_FLAGS 
-    "/DWIN32 /D_WINDOWS /W3 /WX /GR /GS- /Gy /FAcs /Z7 /DEBUG /Wv:18"
-    CACHE STRING "default C++ compile flags" FORCE)
-set(CMAKE_C_FLAGS_DEBUG
-    "/MTd /Ob0 /Od" 
-    CACHE STRING "default C++ compile flags for debug build" FORCE)
-set(CMAKE_C_FLAGS_RELEASE 
-    "/MT /O2 /Ob2 /DNDEBUG" 
-    CACHE STRING "default C++ compile flags for release build" FORCE)
+set(CMAKE_C_FLAGS
+    "${CMAKE_C_FLAGS} /GS-"
+     CACHE STRING "default C++ compile flags" FORCE)
 
 message(STATUS "CMAKE_CXX_FLAGS=" ${CMAKE_CXX_FLAGS})
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG=" ${CMAKE_CXX_FLAGS_DEBUG})
