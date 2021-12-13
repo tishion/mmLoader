@@ -110,11 +110,6 @@ main() {
 
       unsigned char buf[MAX_PATH] = {0};
 
-       //Load the module with LoadLibrary for debug
-      HMODULE m = ::LoadLibraryA(szDllPath);
-      Type_TargetFunction f = (Type_TargetFunction)::GetProcAddress(m, "demoFunction");
-      f(buf, MAX_PATH);
-
       if (pfnFunction(buf, MAX_PATH)) {
         char *p = "{f56fee02-16d1-44a3-b191-4d7535f92ca5}";
         iRet = ::memcmp(buf, p, strlen(p));

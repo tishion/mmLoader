@@ -86,7 +86,7 @@ BOOL
 SetMemProtectStatus(PMEM_MODULE pMemModule);
 
 BOOL
-ExecuteTLSCallback(PMEM_MODULE pMemModule);
+HandleTlsData(PMEM_MODULE pMemModule);
 
 BOOL
 CallModuleEntry(PMEM_MODULE pMemModule, DWORD dwReason);
@@ -178,7 +178,8 @@ LoadMemModuleInternal(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer, BOOL bCal
     return FALSE;
   }
 
-  if (FALSE == ExecuteTLSCallback(pMemModule))
+  // process tls data
+  if (FALSE == HandleTlsData(pMemModule))
     return FALSE;
 
   if (bCallEntry) {
@@ -889,12 +890,12 @@ SetMemProtectStatus(PMEM_MODULE pMemModule) {
 }
 
 /// <summary>
-/// Executes the TLS callback function.
+/// Processes TLS data
 /// </summary>
 /// <param name="pMemModule">The <see cref="MemModule" /> instance.</param>
 /// <returns>True if successful.</returns>
 BOOL
-ExecuteTLSCallback(PMEM_MODULE pMemModule) {
+HandleTlsData(PMEM_MODULE pMemModule) {
   if (NULL == pMemModule || NULL == pMemModule->pImageDosHeader)
     return FALSE;
 
@@ -906,6 +907,12 @@ ExecuteTLSCallback(PMEM_MODULE pMemModule) {
     return TRUE;
 
   PIMAGE_TLS_DIRECTORY tls = (PIMAGE_TLS_DIRECTORY)(pMemModule->iBase + imageDirectoryEntryTls.VirtualAddress);
+
+  // TO-DO
+  // here we need to process the TLS data for all running threads, this is very heavy and danger operation
+  // refer to: http://www.nynaeve.net/?p=189
+
+  // execute tls callback if any
   PIMAGE_TLS_CALLBACK *callback = (PIMAGE_TLS_CALLBACK *)tls->AddressOfCallBacks;
   if (callback) {
     while (*callback) {
