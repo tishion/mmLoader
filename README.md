@@ -4,8 +4,9 @@ mmLoader is a library used for loading DLL modules from memory directly. Also, i
 
 | triplets  | status  |
 |---|---|
-| x86-windows-static | [![Build status](https://dev.azure.com/sheentian/GitHub-CI/_apis/build/status/mmLoader/mmloader-x86-windows-static)](https://dev.azure.com/sheentian/GitHub-CI/_build/latest?definitionId=11) |
-| x64-windows-static | [![Build status](https://dev.azure.com/sheentian/GitHub-CI/_apis/build/status/mmLoader/mmloader-x64-windows-static)](https://dev.azure.com/sheentian/GitHub-CI/_build/latest?definitionId=25) |
+| x86-windows-static | [![CMake](https://github.com/tishion/mmLoader/actions/workflows/cmake.yml/badge.svg)](https://github.com/tishion/mmLoader/actions/workflows/build-win-x86.yml) |
+
+| x64-windows-static | [![CMake](https://github.com/tishion/mmLoader/actions/workflows/cmake.yml/badge.svg)](https://github.com/tishion/mmLoader/actions/workflows/build-win-x64.yml) |
 
 
 [DOC](http://tishion.github.io/mmLoader/) | [CI&CD](https://dev.azure.com/sheentian/GitHub-CI)

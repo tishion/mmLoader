@@ -1,4 +1,4 @@
-name: CMake
+name: Build on Windows x86
 
 on: [push]
 
@@ -17,45 +17,23 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Create Build Workspace for Win32
+    - name: Create Build Workspace for Windows x86
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
-      run: cmake -E make_directory ${{github.workspace}}/build.win32
+      run: cmake -E make_directory ${{github.workspace}}/build.x86
 
-    - name: Configure CMake for Win32
+    - name: Configure CMake for Windows x86
       # Use a bash shell so we can use the same syntax for environment variable
       # access regardless of the host operating system
       shell: bash
-      working-directory: ${{github.workspace}}/build.win32
+      working-directory: ${{github.workspace}}/build.x86
       # Note the current convention is to use the -S and -B options here to specify source 
       # and build directories, but this is only available with CMake 3.13 and higher.  
       # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
       run: cmake $GITHUB_WORKSPACE -G "Visual Studio 16 2019" -A Win32 -DCMAKE_SYSTEM_VERSION=10.0.18362.0 -DBUILD_SHELLCODE_GEN=TRUE -DBUILD_MMLOADER_DEMO=TRUE
       
     - name: Build for Win32
-      working-directory: ${{github.workspace}}/build.win32
-      shell: bash
-      # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: cmake --build .
-
-
-    - name: Create Build Workspace for x64
-      # Some projects don't allow in-source building, so create a separate build directory
-      # We'll use this as our working directory for all subsequent commands
-      run: cmake -E make_directory ${{github.workspace}}/build.x64
-      
-    - name: Configure CMake for x64
-      # Use a bash shell so we can use the same syntax for environment variable
-      # access regardless of the host operating system
-      shell: bash
-      working-directory: ${{github.workspace}}/build.x64
-      # Note the current convention is to use the -S and -B options here to specify source 
-      # and build directories, but this is only available with CMake 3.13 and higher.  
-      # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-      run: cmake $GITHUB_WORKSPACE -G "Visual Studio 16 2019" -A x64 -DCMAKE_SYSTEM_VERSION=10.0.18362.0 -DBUILD_SHELLCODE_GEN=TRUE -DBUILD_MMLOADER_DEMO=TRUE
-      
-    - name: Build for Win64
-      working-directory: ${{github.workspace}}/build.x64
+      working-directory: ${{github.workspace}}/build.x86
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --build .
