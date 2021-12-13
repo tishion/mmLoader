@@ -14,12 +14,12 @@ The CI & CD system has been moved to Azure DevOps and mmLoader will not publish 
 
 
 ### vcpkg support
-mmloader is available on vcpkg now, just install it by the commmand:
+mmloader is available on vcpkg now, just install it by the command:
 > vcpkg install mmloader:x86-windows-static
 
 > vcpkg install mmloader:x64-windows-static
 
-if you want to use mmloader in shellcod mode, you need to install it with feature shellcode:
+if you want to use mmloader in shellcode mode, you need to install it with feature shellcode:
 > vcpkg install mmloader[shellcode]:x86-windows-static
 
 > vcpkg install mmloader[shellcode]:x64-windows-static
@@ -57,3 +57,7 @@ The build system has been switched to CMake, you can generate and build the proj
 Q: Why no dynamic version? 
 
 A: Compiling mmLoader as separated dynamic module is not recommended for some obvious reasons.
+
+Q: Can mmloader process DLLs with static TLS linked?
+
+A: No, currently mmloader cannot load the DLLs with static TLS linked, please refer to this issue: [Bad behavior on static std::string #15](https://github.com/tishion/mmLoader/issues/15)
