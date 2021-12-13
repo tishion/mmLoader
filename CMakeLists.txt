@@ -48,11 +48,8 @@ set(CMAKE_CONFIGURATION_TYPES Debug Release)
 
 # Default compile flags
 # Thanks for the PR https://github.com/microsoft/vcpkg/pull/15151/files from https://github.com/BillyONeal
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GS-"
-    CACHE STRING "default C++ compile flags" FORCE)
-set(CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} /GS-"
-     CACHE STRING "default C++ compile flags" FORCE)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GS-")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /GS-")
 
 message(STATUS "CMAKE_CXX_FLAGS=" ${CMAKE_CXX_FLAGS})
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG=" ${CMAKE_CXX_FLAGS_DEBUG})

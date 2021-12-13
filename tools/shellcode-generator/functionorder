@@ -13,7 +13,7 @@ MapMemModuleSections
 RelocateModuleBase
 ResolveImportTable
 SetMemProtectStatus
-ExecuteTLSCallback
+HandleTlsData
 CallModuleEntry
 GetExportedProcAddress
 UnmapMemModule

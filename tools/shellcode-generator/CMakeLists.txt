@@ -10,6 +10,23 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Shlwapi
 )
 
+# remove /RTC* from compile flags 
+foreach(flag_var
+        CMAKE_CXX_FLAGS 
+        CMAKE_CXX_FLAGS_DEBUG 
+        CMAKE_CXX_FLAGS_RELEASE
+        CMAKE_C_FLAGS 
+        CMAKE_C_FLAGS_DEBUG 
+        CMAKE_C_FLAGS_RELEASE
+)
+    STRING (REGEX REPLACE "/RTC[^ ]*" "" ${flag_var} "${${flag_var}}")
+endforeach(flag_var)
+
+# enable function ordering 
+target_compile_options(${PROJECT_NAME} PRIVATE
+    /Gy
+)
+
 target_link_options(${PROJECT_NAME} PRIVATE
     /OPT:NOREF
     /OPT:NOICF
