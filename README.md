@@ -8,12 +8,9 @@ mmLoader is a library used for loading DLL modules from memory directly. Also, i
 | x64-windows-static | [![CMake](https://github.com/tishion/mmLoader/actions/workflows/build-win-x64.yml/badge.svg)](https://github.com/tishion/mmLoader/actions/workflows/build-win-x64.yml) |
 
 
-[DOC](http://tishion.github.io/mmLoader/) | [CI&CD](https://dev.azure.com/sheentian/GitHub-CI)
+[DOC](http://tishion.github.io/mmLoader/)
 
-The CI & CD system has been moved to Azure DevOps and mmLoader will not publish more nugget packages.
-
-
-### vcpkg support
+### [vcpkg](https://github.com/microsoft/vcpkg) support
 mmloader is available on vcpkg now, just install it by the command:
 > vcpkg install mmloader:x86-windows-static
 
