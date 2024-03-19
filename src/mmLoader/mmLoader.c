@@ -467,22 +467,22 @@ InitApiTable() {
 
     char szLoadLibraryA[] = {'L', 'o', 'a', 'd', 'L', 'i', 'b', 'r', 'a', 'r', 'y', 'A', 0};
     pApis->pfnLoadLibraryA = pfnGetProcAddress(hKernelModule, szLoadLibraryA);
-    if (!pApis->pfnGetModuleHandleA)
+    if (!pApis->pfnLoadLibraryA)
       break;
 
     char szVirtualAlloc[] = {'V', 'i', 'r', 't', 'u', 'a', 'l', 'A', 'l', 'l', 'o', 'c', 0};
     pApis->pfnVirtualAlloc = pfnGetProcAddress(hKernelModule, szVirtualAlloc);
-    if (!pApis->pfnGetModuleHandleA)
+    if (!pApis->pfnVirtualAlloc)
       break;
 
     char szVirtualFree[] = {'V', 'i', 'r', 't', 'u', 'a', 'l', 'F', 'r', 'e', 'e', 0};
     pApis->pfnVirtualFree = pfnGetProcAddress(hKernelModule, szVirtualFree);
-    if (!pApis->pfnGetModuleHandleA)
+    if (!pApis->pfnVirtualFree)
       break;
 
     char szVirtualProtect[] = {'V', 'i', 'r', 't', 'u', 'a', 'l', 'P', 'r', 'o', 't', 'e', 'c', 't', 0};
     pApis->pfnVirtualProtect = pfnGetProcAddress(hKernelModule, szVirtualProtect);
-    if (!pApis->pfnGetModuleHandleA)
+    if (!pApis->pfnVirtualProtect)
       break;
 
     return pApis;
