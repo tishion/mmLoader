@@ -6,8 +6,11 @@
 #include <windows.h>
 
 #include <strsafe.h>
+#include <Shlwapi.h>
 
 #include <mmLoader.h>
+
+const TCHAR *pszDllPath = _T("demo-module.dll");
 
 class AutoReleaseModuleBuffer {
 public:
@@ -85,8 +88,14 @@ main() {
 
   // Here we just read the module data from disk file
   // In your real project you can download the module data from remote without writing to disk file
-  TCHAR szDllPath[] = _T("demo-module.dll");
-  AutoReleaseModuleBuffer moduleBuffer(szDllPath);
+  // Build the module file path
+  TCHAR szFullModulePath[MAX_PATH] = {0};
+  DWORD dwLength = _countof(szFullModulePath);
+  ::GetModuleFileName(::GetModuleHandle(nullptr), szFullModulePath, dwLength);
+  ::PathRemoveFileSpec(szFullModulePath);
+  ::PathCombine(szFullModulePath, szFullModulePath, pszDllPath);
+  // Read module data to memory buffer
+  AutoReleaseModuleBuffer moduleBuffer(szFullModulePath);
 
   // Load the module from the buffer
   hMemModule = (HMEMMODULE)MemModuleHelper(MHM_BOOL_LOAD, moduleBuffer, (LPVOID)TRUE, &dwErrorCode);
@@ -103,7 +112,7 @@ main() {
       _tprintf(_T("Get address of demoFunction successfully. Address: 0x%p!\r\n"), lpAddr);
 
       // Function pointer type of demoFunction
-      typedef BOOL(_stdcall * Type_TargetFunction)(unsigned char *, unsigned int);
+      typedef BOOL (*Type_TargetFunction)(unsigned char *, unsigned int);
 
       // Call the demoFunction
       Type_TargetFunction pfnFunction = (Type_TargetFunction)lpAddr;

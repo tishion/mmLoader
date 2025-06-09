@@ -6,6 +6,7 @@
 #include <windows.h>
 
 #include <strsafe.h>
+#include <Shlwapi.h>
 
 #ifdef _WIN64
 #ifdef _DEBUG
@@ -20,6 +21,8 @@
 #include <mmLoaderShellCode-x86-Release.h>
 #endif
 #endif
+
+const TCHAR *pszDllPath = _T("demo-module.dll");
 
 class AutoReleaseModuleBuffer {
 public:
@@ -110,13 +113,15 @@ main() {
   Type_MemModuleHelper pfnMemModuleHelper = (Type_MemModuleHelper)lpShellCodeBase;
 
   // Here we just read the module data from disk file
-  // In your real project you can download the module data from remote without witting it to disk file
-#ifdef _DEBUG
-  TCHAR szDllPath[] = _T("demo-moduled.dll");
-#else
-  TCHAR szDllPath[] = _T("demo-module.dll");
-#endif
-  AutoReleaseModuleBuffer moduleBuffer(szDllPath);
+  // In your real project you can download the module data from remote without writing to disk file
+  // Build the module file path
+  TCHAR szFullModulePath[MAX_PATH] = {0};
+  DWORD dwLength = _countof(szFullModulePath);
+  ::GetModuleFileName(::GetModuleHandle(nullptr), szFullModulePath, dwLength);
+  ::PathRemoveFileSpec(szFullModulePath);
+  ::PathCombine(szFullModulePath, szFullModulePath, pszDllPath);
+  // Read module data to memory buffer
+  AutoReleaseModuleBuffer moduleBuffer(szFullModulePath);
 
   // Load the module from the buffer
   hMemModule = (HMEMMODULE)pfnMemModuleHelper(MHM_BOOL_LOAD, moduleBuffer, (LPVOID)TRUE, &dwErrorCode);
@@ -133,7 +138,7 @@ main() {
       _tprintf(_T("Get address of demoFunction successfully. Address: 0x%p!\r\n"), lpAddr);
 
       // Function pointer type of demoFunction
-      typedef BOOL(__stdcall * Type_TargetFunction)(unsigned char *, unsigned int);
+      typedef BOOL (*Type_TargetFunction)(unsigned char *, unsigned int);
 
       // Call the demoFunction
       Type_TargetFunction pfnFunction = (Type_TargetFunction)lpAddr;

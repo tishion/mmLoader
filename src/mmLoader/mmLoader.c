@@ -42,7 +42,7 @@ typedef struct __MEMMODULE_S {
     HMODULE hModule;
     LPVOID lpBase;
     PIMAGE_DOS_HEADER pImageDosHeader;
-  };                   // MemModule base
+  }; // MemModule base
   DWORD dwSizeOfImage; // MemModule size
   DWORD dwCrc;         // MemModule crc32
 
