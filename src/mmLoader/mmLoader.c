@@ -965,6 +965,9 @@ GetExportedProcAddress(PMEM_MODULE pMemModule, LPCSTR lpName) {
   if (NULL == pMemModule || NULL == pMemModule->pImageDosHeader)
     return NULL;
 
+  if (NULL == lpName)
+    return NULL;
+
   PIMAGE_NT_HEADERS pImageNtHeader =
       MakePointer(PIMAGE_NT_HEADERS, pMemModule->pImageDosHeader, pMemModule->pImageDosHeader->e_lfanew);
 
@@ -988,6 +991,17 @@ GetExportedProcAddress(PMEM_MODULE pMemModule, LPCSTR lpName) {
   PWORD pAddressOfNameOrdinals = MakePointer(PWORD, pMemModule->lpBase, pImageExportDirectory->AddressOfNameOrdinals);
 
   PDWORD pAddressOfFunctions = MakePointer(PDWORD, pMemModule->lpBase, pImageExportDirectory->AddressOfFunctions);
+
+  if ((((ULONG_PTR)lpName) >> 16) == 0) {
+    WORD wOrdinal = (WORD)(ULONG_PTR)lpName;
+    if (wOrdinal < pImageExportDirectory->Base)
+      return NULL;
+    WORD wIndex = (WORD)(wOrdinal - pImageExportDirectory->Base);
+    if (wIndex >= pImageExportDirectory->NumberOfFunctions)
+      return NULL;
+    DWORD dwFunctionOffset = pAddressOfFunctions[wIndex];
+    return MakePointer(FARPROC, pMemModule->lpBase, dwFunctionOffset);
+  }
 
   int nNumberOfNames = pImageExportDirectory->NumberOfNames;
   for (int i = 0; i < nNumberOfNames; ++i) {
