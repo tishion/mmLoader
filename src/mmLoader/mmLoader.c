@@ -979,16 +979,8 @@ GetExportedProcAddress(PMEM_MODULE pMemModule, LPCSTR lpName) {
       MakePointer(PIMAGE_EXPORT_DIRECTORY, pMemModule->lpBase,
                   pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
 
-  if (0 == pImageExportDirectory->NumberOfNames || 0 == pImageExportDirectory->NumberOfFunctions)
+  if (0 == pImageExportDirectory->NumberOfFunctions || 0 == pImageExportDirectory->AddressOfFunctions)
     return NULL;
-
-  if (0 == pImageExportDirectory->AddressOfNames || 0 == pImageExportDirectory->AddressOfNameOrdinals ||
-      0 == pImageExportDirectory->AddressOfFunctions)
-    return NULL;
-
-  PDWORD pAddressOfNames = MakePointer(PDWORD, pMemModule->lpBase, pImageExportDirectory->AddressOfNames);
-
-  PWORD pAddressOfNameOrdinals = MakePointer(PWORD, pMemModule->lpBase, pImageExportDirectory->AddressOfNameOrdinals);
 
   PDWORD pAddressOfFunctions = MakePointer(PDWORD, pMemModule->lpBase, pImageExportDirectory->AddressOfFunctions);
 
@@ -1002,6 +994,14 @@ GetExportedProcAddress(PMEM_MODULE pMemModule, LPCSTR lpName) {
     DWORD dwFunctionOffset = pAddressOfFunctions[wIndex];
     return MakePointer(FARPROC, pMemModule->lpBase, dwFunctionOffset);
   }
+
+  if (0 == pImageExportDirectory->NumberOfNames || 0 == pImageExportDirectory->AddressOfNames ||
+      0 == pImageExportDirectory->AddressOfNameOrdinals)
+    return NULL;
+
+  PDWORD pAddressOfNames = MakePointer(PDWORD, pMemModule->lpBase, pImageExportDirectory->AddressOfNames);
+
+  PWORD pAddressOfNameOrdinals = MakePointer(PWORD, pMemModule->lpBase, pImageExportDirectory->AddressOfNameOrdinals);
 
   int nNumberOfNames = pImageExportDirectory->NumberOfNames;
   for (int i = 0; i < nNumberOfNames; ++i) {
