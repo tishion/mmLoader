@@ -488,6 +488,9 @@ InitApiTable() {
     return pApis;
   } while (0);
 
+  // Free the allocated API table on failure to prevent memory leak
+  if (pApis)
+    pfnGlobalFree(pApis);
   return NULL;
 }
 
@@ -526,8 +529,6 @@ IsValidPEFormat(PMEM_MODULE pMemModule, LPVOID lpPeModuleBuffer) {
     IfFalseGoExit(IMAGE_NT_OPTIONAL_HDR32_MAGIC == pImageNtHeader->OptionalHeader.Magic);
   }
 #endif
-  else
-    br = FALSE;
 
 _Exit:
   // If this is invalid PE file data return error
@@ -717,6 +718,18 @@ RelocateModuleBase(PMEM_MODULE pMemModule) {
             (PULONGLONG)(pMemModule->iBase + pImageBaseRelocation->VirtualAddress + (pRelocationData[i] & 0x0FFF));
         *pAddress += lBaseDelta;
       }
+#else
+      if (IMAGE_REL_BASED_HIGH == (pRelocationData[i] >> 12)) {
+        PDWORD pAddress =
+            (PDWORD)(pMemModule->iBase + pImageBaseRelocation->VirtualAddress + (pRelocationData[i] & 0x0FFF));
+        *pAddress = (DWORD)(((*pAddress & 0xFFFF0000) | ((WORD)((lBaseDelta >> 16) & 0xFFFF))));
+      }
+
+      if (IMAGE_REL_BASED_LOW == (pRelocationData[i] >> 12)) {
+        PDWORD pAddress =
+            (PDWORD)(pMemModule->iBase + pImageBaseRelocation->VirtualAddress + (pRelocationData[i] & 0x0FFF));
+        *pAddress = (DWORD)(((*pAddress & 0xFFFF0000) | ((WORD)(lBaseDelta & 0xFFFF))));
+      }
 #endif
     }
 
@@ -829,11 +842,6 @@ SetMemProtectStatus(PMEM_MODULE pMemModule) {
 
   PIMAGE_DOS_HEADER pImageDosHeader = (PIMAGE_DOS_HEADER)(pMemModule->lpBase);
 
-  ULONGLONG ulBaseHigh = 0;
-#ifdef _WIN64
-  ulBaseHigh = (pMemModule->iBase & 0xffffffff00000000);
-#endif
-
   PIMAGE_NT_HEADERS pImageNtHeader = MakePointer(PIMAGE_NT_HEADERS, pImageDosHeader, pImageDosHeader->e_lfanew);
 
   int nNumberOfSections = pImageNtHeader->FileHeader.NumberOfSections;
@@ -848,7 +856,7 @@ SetMemProtectStatus(PMEM_MODULE pMemModule) {
     BOOL isWritable = FALSE;
 
     BOOL isNotCache = FALSE;
-    ULONGLONG dwSectionBase = (pImageSectionHeader[idxSection].Misc.PhysicalAddress | ulBaseHigh);
+    ULONGLONG dwSectionBase = (ULONGLONG)pMemModule->lpBase + pImageSectionHeader[idxSection].VirtualAddress;
     DWORD dwSecionSize = pImageSectionHeader[idxSection].SizeOfRawData;
     if (0 == dwSecionSize)
       continue;
