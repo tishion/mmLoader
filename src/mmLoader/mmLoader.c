@@ -718,18 +718,6 @@ RelocateModuleBase(PMEM_MODULE pMemModule) {
             (PULONGLONG)(pMemModule->iBase + pImageBaseRelocation->VirtualAddress + (pRelocationData[i] & 0x0FFF));
         *pAddress += lBaseDelta;
       }
-#else
-      if (IMAGE_REL_BASED_HIGH == (pRelocationData[i] >> 12)) {
-        PDWORD pAddress =
-            (PDWORD)(pMemModule->iBase + pImageBaseRelocation->VirtualAddress + (pRelocationData[i] & 0x0FFF));
-        *pAddress = (DWORD)(((*pAddress & 0xFFFF0000) | ((WORD)((lBaseDelta >> 16) & 0xFFFF))));
-      }
-
-      if (IMAGE_REL_BASED_LOW == (pRelocationData[i] >> 12)) {
-        PDWORD pAddress =
-            (PDWORD)(pMemModule->iBase + pImageBaseRelocation->VirtualAddress + (pRelocationData[i] & 0x0FFF));
-        *pAddress = (DWORD)(((*pAddress & 0xFFFF0000) | ((WORD)(lBaseDelta & 0xFFFF))));
-      }
 #endif
     }
 
